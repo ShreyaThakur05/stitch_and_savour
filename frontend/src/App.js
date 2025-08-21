@@ -33,6 +33,7 @@ import './App.css';
 import './styles/responsive.css';
 import './styles/mobile.css';
 import './styles/mobile-fix.css';
+import './styles/mobile-perfect.css';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();

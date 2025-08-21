@@ -64,31 +64,29 @@ const UserDashboard = () => {
 
   const fetchUserData = async () => {
     try {
-      // Get user-specific orders from localStorage
-      const userSpecificKey = `userOrders_${user?.email || user?.id}`;
-      const userOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
+      // Get orders from backend with localStorage fallback
+      const userOrders = await orderService.getUserOrders();
       
-      // Only show orders that were actually placed by this user
+      // Filter orders to show only current user's orders
       const currentUserOrders = userOrders.filter(order => 
-        order.customerEmail === user?.email &&
-        order.items && order.items.length > 0
+        order.customerName === user?.name || 
+        order.customerEmail === user?.email ||
+        order.userId === user?.id
       );
       
       const formattedOrders = currentUserOrders.map(order => ({
-        _id: order.orderId || order._id || order.orderNumber,
+        _id: order.orderId || order._id,
         orderNumber: order.orderNumber || order.orderId,
-        total: order.total || order.totalAmount,
+        total: order.total,
         status: order.status || 'pending',
         paymentMethod: order.paymentMethod,
         createdAt: order.createdAt,
         estimatedDelivery: order.estimatedDelivery,
-        items: order.items || [],
-        customerPhone: order.customerPhone || user?.phone
+        items: order.items,
+        customerPhone: order.customerPhone || user?.phone,
+        productImage: order.items?.[0]?.productImage || order.items?.[0]?.images?.[0] || '/images/placeholder.jpg',
+        productName: order.items?.[0]?.name || 'Order Items'
       }));
-      
-      console.log('Current user:', user?.email);
-      console.log('User orders found:', currentUserOrders.length);
-      console.log('Filtered orders:', formattedOrders);
       
       setOrders(formattedOrders);
       // Calculate payment due for current user's COD orders only
@@ -359,9 +357,9 @@ const UserDashboard = () => {
                 {orders.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--bg-tertiary)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
                     <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🛍️</div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '1rem' }}>No orders yet</h3>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '1rem' }}>Ready to start shopping?</h3>
                     <p style={{ color: 'var(--text-strong)', marginBottom: '2rem', lineHeight: '1.5' }}>
-                      Your order history will appear here once you place your first order.
+                      Discover our amazing collection of handmade crochet items and delicious homemade food!
                     </p>
                     <button 
                       onClick={() => navigate('/products')}
@@ -383,20 +381,33 @@ const UserDashboard = () => {
                 ) : (
                   <div className="space-y-4">
                     {orders.slice(0, 3).map((order) => (
-                      <div key={order._id || order.orderNumber} style={{
+                      <div key={order.id} style={{
                         border: '1px solid var(--border-color)',
                         borderRadius: '12px',
                         padding: '1rem',
                         background: 'var(--bg-secondary)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <img
+                            src={order.productImage}
+                            alt={order.productName}
+                            style={{
+                              width: '60px',
+                              height: '60px',
+                              objectFit: 'cover',
+                              borderRadius: '8px'
+                            }}
+                            onError={(e) => {
+                              e.target.src = '/images/placeholder.jpg';
+                            }}
+                          />
                           <div style={{ flex: 1 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                               {getStatusIcon(order.status)}
                               <p style={{ fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>Order #{order.orderNumber}</p>
                             </div>
                             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
-                              {order.items?.length || 0} item(s)
+                              {order.productName}
                             </p>
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
                               {new Date(order.createdAt).toLocaleDateString()}
@@ -472,7 +483,7 @@ const UserDashboard = () => {
                 ) : (
                   <div className="space-y-4">
                     {filteredOrders.map((order) => (
-                      <div key={order._id || order.orderNumber} style={{
+                      <div key={order.id} style={{
                         border: '1px solid var(--border-color)',
                         borderRadius: '12px',
                         padding: '1.5rem',
@@ -480,11 +491,22 @@ const UserDashboard = () => {
                         marginBottom: '1rem'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                          <img
+                            src={order.productImage}
+                            alt={order.productName}
+                            style={{
+                              width: '80px',
+                              height: '80px',
+                              objectFit: 'cover',
+                              borderRadius: '8px'
+                            }}
+                            onError={(e) => {
+                              e.target.src = '/images/placeholder.jpg';
+                            }}
+                          />
                           <div style={{ flex: 1 }}>
                             <h4 style={{ fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>Order #{order.orderNumber}</h4>
-                            <p style={{ fontSize: '1rem', color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>
-                              {order.items?.length || 0} item(s) - {order.items?.map(item => item.name).join(', ') || 'Order Items'}
-                            </p>
+                            <p style={{ fontSize: '1rem', color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>{order.items?.[0]?.name || 'Order Items'}</p>
                             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
                               Placed on {new Date(order.createdAt).toLocaleDateString()}
                             </p>
