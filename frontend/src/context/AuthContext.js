@@ -16,18 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Mock users for demo (in real app, this would be API calls)
-  const mockUsers = [
-    {
-      id: 1,
-      name: 'Admin',
-      email: 'admin@stitchandsavour.com',
-      phone: '9970944685',
-      address: 'Sirul, Maharashtra, India',
-      role: 'admin',
-      password: 'admin123'
-    }
-  ];
+  // All authentication now handled by backend API
 
   // Load user from localStorage on mount
   useEffect(() => {

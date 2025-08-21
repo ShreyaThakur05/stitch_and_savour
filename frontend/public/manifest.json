@@ -1,6 +1,6 @@
 {
   "short_name": "Stitch & Savour",
-  "name": "Stitch & Savour - Homemade Food & Handcrafted Crochet",
+  "name": "Stitch & Savour - Handmade Food & Crochet",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,6 +10,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#e91e63",
+  "theme_color": "#d946ef",
   "background_color": "#ffffff"
 }
