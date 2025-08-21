@@ -75,7 +75,22 @@ const UserDashboard = () => {
     const savedAddresses = localStorage.getItem(`userAddresses_${user?.email}`);
     
     if (savedProfile) {
-      setProfileData(JSON.parse(savedProfile));
+      const profile = JSON.parse(savedProfile);
+      setProfileData({
+        ...profile,
+        phone: profile.phone || user?.phone || '',
+        email: profile.email || user?.email || '',
+        fullName: profile.fullName || user?.name || ''
+      });
+    } else {
+      setProfileData({
+        fullName: user?.name || '',
+        email: user?.email || '',
+        phone: user?.phone || '',
+        gender: '',
+        dateOfBirth: '',
+        city: ''
+      });
     }
     if (savedAddresses) {
       setAddresses(JSON.parse(savedAddresses));
@@ -573,6 +588,7 @@ const UserDashboard = () => {
                           color: 'var(--text-primary)',
                           fontSize: '0.9rem'
                         }}
+                        placeholder={user?.phone || 'Enter phone number'}
                       />
                     </div>
                     

@@ -1230,25 +1230,30 @@ const CheckoutPage = () => {
                 disabled={loading || !validateForm()}
                 style={{
                   width: '100%',
-                  background: validateForm() ? 'var(--primary-color)' : 'var(--text-secondary)',
+                  background: (validateForm() && !loading) ? 'var(--primary-color)' : 'var(--text-secondary)',
                   color: 'white',
                   border: 'none',
                   padding: '1rem',
                   borderRadius: '12px',
                   fontSize: '1.1rem',
                   fontWeight: '600',
-                  cursor: validateForm() ? 'pointer' : 'not-allowed',
+                  cursor: (validateForm() && !loading) ? 'pointer' : 'not-allowed',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.5rem'
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease',
+                  opacity: (validateForm() && !loading) ? 1 : 0.6
                 }}
               >
                 {loading ? (
-                  <div className="spinner" style={{ width: '20px', height: '20px' }}></div>
+                  <>
+                    <div className="spinner" style={{ width: '20px', height: '20px', border: '2px solid #ffffff40', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                    Processing...
+                  </>
                 ) : (
                   <>
-                    {paymentMethod === 'qr' ? 'Proceed to Payment' : 'Place Order'}
+                    {paymentMethod === 'qr' ? '💳 Proceed to Payment' : '🛒 Place Order'}
                   </>
                 )}
               </button>
@@ -1262,6 +1267,13 @@ const CheckoutPage = () => {
               }}>
                 🔒 Your information is secure and encrypted
               </div>
+              
+              <style jsx>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
             </div>
           </div>
         </div>
