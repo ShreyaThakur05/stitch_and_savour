@@ -64,15 +64,13 @@ const UserDashboard = () => {
 
   const fetchUserData = async () => {
     try {
-      // Get only localStorage orders for current user
-      const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      // Get user-specific orders from localStorage
+      const userSpecificKey = `userOrders_${user?.email || user?.id}`;
+      const userOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
       
-      // Filter orders to show only current user's orders
-      const currentUserOrders = allOrders.filter(order => 
-        (order.customerName === user?.name || 
-         order.customerEmail === user?.email ||
-         order.userId === user?.id ||
-         order.email === user?.email) &&
+      // Only show orders that were actually placed by this user
+      const currentUserOrders = userOrders.filter(order => 
+        order.customerEmail === user?.email &&
         order.items && order.items.length > 0
       );
       
@@ -89,6 +87,7 @@ const UserDashboard = () => {
       }));
       
       console.log('Current user:', user?.email);
+      console.log('User orders found:', currentUserOrders.length);
       console.log('Filtered orders:', formattedOrders);
       
       setOrders(formattedOrders);

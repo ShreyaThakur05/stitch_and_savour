@@ -31,15 +31,17 @@ export const orderService = {
       // Try to save to backend first
       const response = await api.post('/orders', orderData);
       
-      // If backend succeeds, also save to localStorage for offline access
-      const existingOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      // Save to user-specific localStorage key
+      const userEmail = orderData.customerEmail || orderData.email;
+      const userSpecificKey = `userOrders_${userEmail}`;
+      const existingOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
       existingOrders.push({
         ...orderData,
         orderId: response.data.order._id,
         createdAt: response.data.order.createdAt,
         status: response.data.order.status
       });
-      localStorage.setItem('userOrders', JSON.stringify(existingOrders));
+      localStorage.setItem(userSpecificKey, JSON.stringify(existingOrders));
       
       return response.data;
     } catch (error) {
@@ -54,9 +56,11 @@ export const orderService = {
         isLocal: true
       };
       
-      const existingOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      const userEmail = orderData.customerEmail || orderData.email;
+      const userSpecificKey = `userOrders_${userEmail}`;
+      const existingOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
       existingOrders.push(localOrder);
-      localStorage.setItem('userOrders', JSON.stringify(existingOrders));
+      localStorage.setItem(userSpecificKey, JSON.stringify(existingOrders));
       
       return { success: true, order: localOrder };
     }
@@ -67,14 +71,18 @@ export const orderService = {
     try {
       const response = await api.get('/orders/user');
       
-      // Merge with local orders
-      const localOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      // Get user email from token or current user
+      const currentUser = JSON.parse(localStorage.getItem('stitch_savour_user') || '{}');
+      const userSpecificKey = `userOrders_${currentUser.email}`;
+      const localOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
       const allOrders = [...response.data.orders, ...localOrders.filter(o => o.isLocal)];
       
       return allOrders;
     } catch (error) {
       console.warn('Backend unavailable, using local orders:', error.message);
-      return JSON.parse(localStorage.getItem('userOrders') || '[]');
+      const currentUser = JSON.parse(localStorage.getItem('stitch_savour_user') || '{}');
+      const userSpecificKey = `userOrders_${currentUser.email}`;
+      return JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
     }
   },
 
@@ -83,22 +91,26 @@ export const orderService = {
     try {
       const response = await api.put(`/orders/${orderId}/status`, { status });
       
-      // Update localStorage
-      const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      // Update user-specific localStorage
+      const currentUser = JSON.parse(localStorage.getItem('stitch_savour_user') || '{}');
+      const userSpecificKey = `userOrders_${currentUser.email}`;
+      const orders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
       const orderIndex = orders.findIndex(o => o.orderId === orderId);
       if (orderIndex > -1) {
         orders[orderIndex].status = status;
-        localStorage.setItem('userOrders', JSON.stringify(orders));
+        localStorage.setItem(userSpecificKey, JSON.stringify(orders));
       }
       
       return response.data;
     } catch (error) {
       // Update only localStorage if backend fails
-      const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      const currentUser = JSON.parse(localStorage.getItem('stitch_savour_user') || '{}');
+      const userSpecificKey = `userOrders_${currentUser.email}`;
+      const orders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
       const orderIndex = orders.findIndex(o => o.orderId === orderId);
       if (orderIndex > -1) {
         orders[orderIndex].status = status;
-        localStorage.setItem('userOrders', JSON.stringify(orders));
+        localStorage.setItem(userSpecificKey, JSON.stringify(orders));
       }
       throw error;
     }
