@@ -64,30 +64,32 @@ const UserDashboard = () => {
 
   const fetchUserData = async () => {
     try {
-      // Get orders from backend with localStorage fallback
-      const userOrders = await orderService.getUserOrders();
+      // Get only localStorage orders for current user
+      const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
       
       // Filter orders to show only current user's orders
-      const currentUserOrders = userOrders.filter(order => 
+      const currentUserOrders = allOrders.filter(order => 
         (order.customerName === user?.name || 
          order.customerEmail === user?.email ||
-         order.userId === user?.id) &&
+         order.userId === user?.id ||
+         order.email === user?.email) &&
         order.items && order.items.length > 0
       );
       
       const formattedOrders = currentUserOrders.map(order => ({
-        _id: order.orderId || order._id,
+        _id: order.orderId || order._id || order.orderNumber,
         orderNumber: order.orderNumber || order.orderId,
-        total: order.total,
+        total: order.total || order.totalAmount,
         status: order.status || 'pending',
         paymentMethod: order.paymentMethod,
         createdAt: order.createdAt,
         estimatedDelivery: order.estimatedDelivery,
-        items: order.items,
-        customerPhone: order.customerPhone || user?.phone,
-        productImage: order.items?.[0]?.productImage || order.items?.[0]?.images?.[0] || '/images/placeholder.jpg',
-        productName: order.items?.[0]?.name || 'Order Items'
+        items: order.items || [],
+        customerPhone: order.customerPhone || user?.phone
       }));
+      
+      console.log('Current user:', user?.email);
+      console.log('Filtered orders:', formattedOrders);
       
       setOrders(formattedOrders);
       // Calculate payment due for current user's COD orders only
