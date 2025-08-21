@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, X, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { config } from '../config/config';
 
 const Chatbot = () => {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ const Chatbot = () => {
 
   const generateResponse = async (userMessage) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/chatbot/query`, {
+      const response = await fetch(`${config.API_URL}/chatbot/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
