@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -44,26 +45,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Check hardcoded admin
-      const adminUser = mockUsers.find(u => u.email === email && u.password === password);
-      if (adminUser) {
-        const { password: _, ...userWithoutPassword } = adminUser;
-        setUser(userWithoutPassword);
-        localStorage.setItem('stitch_savour_user', JSON.stringify(userWithoutPassword));
+      const response = await authService.login({ email, password });
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        setUser(response.user);
+        localStorage.setItem('stitch_savour_user', JSON.stringify(response.user));
         return true;
       }
-
-      // Check localStorage users (registered users)
-      const registeredUsers = JSON.parse(localStorage.getItem('stitch_savour_registered_users') || '[]');
-      const foundUser = registeredUsers.find(u => u.email === email && u.password === password);
-      
-      if (foundUser) {
-        const { password: _, ...userWithoutPassword } = foundUser;
-        setUser(userWithoutPassword);
-        localStorage.setItem('stitch_savour_user', JSON.stringify(userWithoutPassword));
-        return true;
-      }
-
       return false;
     } catch (error) {
       console.error('Login error:', error);
@@ -73,47 +61,31 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (userData) => {
     try {
-      // Prevent admin signup
-      if (userData.email === 'admin@stitchandsavour.com') {
-        return false;
+      const response = await authService.register(userData);
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        setUser(response.user);
+        localStorage.setItem('stitch_savour_user', JSON.stringify(response.user));
+        return true;
       }
-
-      // Check if user already exists
-      const registeredUsers = JSON.parse(localStorage.getItem('stitch_savour_registered_users') || '[]');
-      const existingUser = registeredUsers.find(u => u.email === userData.email);
-      
-      if (existingUser) {
-        return false;
-      }
-
-      // Create new user
-      const newUser = {
-        id: Date.now(),
-        ...userData,
-        role: 'user',
-        createdAt: new Date().toISOString()
-      };
-
-      // Save to registered users
-      registeredUsers.push(newUser);
-      localStorage.setItem('stitch_savour_registered_users', JSON.stringify(registeredUsers));
-
-      // Log in the user
-      const { password: _, ...userWithoutPassword } = newUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('stitch_savour_user', JSON.stringify(userWithoutPassword));
-
-      return true;
+      return false;
     } catch (error) {
       console.error('Signup error:', error);
       return false;
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('stitch_savour_user');
-    localStorage.removeItem('stitch_savour_cart');
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('stitch_savour_user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('stitch_savour_cart');
+    }
   };
 
   const updateProfile = async (updatedData) => {

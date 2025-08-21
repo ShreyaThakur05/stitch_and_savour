@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { CreditCard, Smartphone, Truck, MapPin, Phone, Mail, User, CheckCircle, Clock } from 'lucide-react';
 import emailService from '../services/emailService';
 import paymentService from '../services/paymentService';
+import orderService from '../services/orderService';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -169,26 +170,12 @@ const CheckoutPage = () => {
         estimatedDelivery: expectedDelivery
       };
 
-      // Send order to backend API
+      // Send order to backend API with localStorage fallback
       try {
-        const response = await fetch('/api/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify(orderData)
-        });
-
-        const result = await response.json();
-        
-        if (result.success) {
-          console.log('✅ Order placed successfully:', result.order);
-        } else {
-          console.error('❌ Order API error:', result.error);
-        }
+        const result = await orderService.createOrder(orderData);
+        console.log('✅ Order placed successfully:', result.order);
       } catch (apiError) {
-        console.error('❌ API call failed:', apiError);
+        console.error('❌ Order service error:', apiError);
       }
 
       // Send email confirmation using EmailJS
@@ -210,22 +197,7 @@ const CheckoutPage = () => {
         }
       }
 
-      // Store order in localStorage for user dashboard (fallback)
-      const existingOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      const orderWithImages = {
-        ...orderData,
-        orderNumber: orderId,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        estimatedDelivery: expectedDelivery.toISOString(),
-        userId: user?.id,
-        items: cartItems.map(item => ({
-          ...item,
-          productImage: item.images?.[0] || '/images/placeholder.jpg'
-        }))
-      };
-      existingOrders.push(orderWithImages);
-      localStorage.setItem('userOrders', JSON.stringify(existingOrders));
+      // Order is already stored by orderService
       
       // Clear cart and show success
       clearCart();

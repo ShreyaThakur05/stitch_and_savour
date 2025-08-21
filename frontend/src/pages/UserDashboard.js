@@ -5,7 +5,8 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
-import Chatbot from '../components/Chatbot';
+import orderService from '../services/orderService';
+import reviewService from '../services/reviewService';
 import { 
   Package, 
   ShoppingBag, 
@@ -63,19 +64,14 @@ const UserDashboard = () => {
 
   const fetchUserData = async () => {
     try {
-      // Get orders from localStorage for current user only
-      const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      const userOrders = allOrders.filter(order => 
-        order.customerName === user?.name || 
-        order.userId === user?.id ||
-        order.email === user?.email
-      );
+      // Get orders from backend with localStorage fallback
+      const userOrders = await orderService.getUserOrders();
       
       const formattedOrders = userOrders.map(order => ({
-        _id: order.orderId,
-        orderNumber: order.orderNumber,
+        _id: order.orderId || order._id,
+        orderNumber: order.orderNumber || order.orderId,
         total: order.total,
-        status: order.status,
+        status: order.status || 'pending',
         paymentMethod: order.paymentMethod,
         createdAt: order.createdAt,
         estimatedDelivery: order.estimatedDelivery,
@@ -783,28 +779,26 @@ const UserDashboard = () => {
                 </div>
 
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (selectedProduct && rating > 0 && reviewText.trim()) {
                       const [productName, orderNumber] = selectedProduct.split('|');
                       
-                      // Store review in localStorage
-                      const existingReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
-                      const newReview = {
-                        id: Date.now(),
-                        productName,
-                        orderNumber,
-                        rating,
-                        review: reviewText.trim(),
-                        date: new Date().toISOString(),
-                        customerName: user?.name || 'Anonymous'
-                      };
-                      existingReviews.push(newReview);
-                      localStorage.setItem('productReviews', JSON.stringify(existingReviews));
-                      
-                      showToast('Review submitted successfully! Thank you for your feedback.', 'success');
-                      setSelectedProduct('');
-                      setRating(0);
-                      setReviewText('');
+                      try {
+                        await reviewService.createReview({
+                          productName,
+                          orderNumber,
+                          rating,
+                          review: reviewText.trim(),
+                          customerName: user?.name || 'Anonymous'
+                        });
+                        
+                        showToast('Review submitted successfully! Thank you for your feedback.', 'success');
+                        setSelectedProduct('');
+                        setRating(0);
+                        setReviewText('');
+                      } catch (error) {
+                        showToast('Failed to submit review. Please try again.', 'error');
+                      }
                     } else {
                       showToast('Please select a product, rating, and write a review', 'error');
                     }
