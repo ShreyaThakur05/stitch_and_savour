@@ -1,0 +1,266 @@
+/* Additional Mobile Optimizations */
+
+/* Viewport Meta Fix */
+@viewport {
+  width: device-width;
+  initial-scale: 1;
+}
+
+/* Global Mobile Styles */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal scroll */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Mobile Navigation */
+@media (max-width: 768px) {
+  /* Navigation Bar */
+  .navbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    background: var(--bg-primary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+
+  /* Mobile Menu */
+  .mobile-menu {
+    position: fixed !important;
+    top: 60px !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: var(--bg-primary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    transform: translateY(-100%) !important;
+    transition: transform 0.3s ease !important;
+  }
+
+  .mobile-menu.open {
+    transform: translateY(0) !important;
+  }
+
+  /* Product Cards */
+  .product-card {
+    width: 100% !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .product-card img {
+    width: 100% !important;
+    height: 200px !important;
+    object-fit: cover !important;
+  }
+
+  /* Form Inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  textarea,
+  select {
+    width: 100% !important;
+    padding: 1rem !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+  }
+
+  /* Buttons */
+  .btn-primary,
+  .btn-secondary,
+  .btn-outline {
+    width: 100% !important;
+    padding: 1rem !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Cart Page */
+  .cart-item {
+    padding: 1rem !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .cart-item-image {
+    width: 80px !important;
+    height: 80px !important;
+    object-fit: cover !important;
+    border-radius: 8px !important;
+  }
+
+  /* Checkout Page */
+  .checkout-summary {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: var(--bg-primary) !important;
+    padding: 1rem !important;
+    border-top: 1px solid var(--border-color) !important;
+    margin: 0 -1rem !important;
+  }
+
+  /* Product Detail Page */
+  .product-images {
+    width: 100% !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .product-image-main {
+    width: 100% !important;
+    height: 300px !important;
+    object-fit: cover !important;
+    border-radius: 12px !important;
+  }
+
+  .product-thumbnails {
+    display: flex !important;
+    gap: 0.5rem !important;
+    margin-top: 0.5rem !important;
+    overflow-x: auto !important;
+  }
+
+  .product-thumbnail {
+    width: 60px !important;
+    height: 60px !important;
+    object-fit: cover !important;
+    border-radius: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Dashboard */
+  .dashboard-tabs {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  .dashboard-tab {
+    display: inline-block !important;
+    padding: 0.75rem 1rem !important;
+    margin-right: 0.5rem !important;
+    border-radius: 8px !important;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    text-decoration: none !important;
+    font-size: 0.9rem !important;
+    white-space: nowrap !important;
+  }
+
+  .dashboard-tab.active {
+    background: var(--primary-color) !important;
+    color: white !important;
+  }
+
+  /* Modal */
+  .modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: var(--bg-primary) !important;
+    z-index: 9999 !important;
+    overflow-y: auto !important;
+    padding: 1rem !important;
+  }
+
+  .modal-content {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+  }
+
+  /* Footer */
+  .footer {
+    padding: 2rem 1rem !important;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+    text-align: center !important;
+  }
+
+  /* WhatsApp Button */
+  .whatsapp-float {
+    bottom: 20px !important;
+    right: 20px !important;
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    background: #25D366 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: fixed !important;
+    z-index: 1000 !important;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4) !important;
+  }
+
+  /* Loading States */
+  .loading-spinner {
+    width: 40px !important;
+    height: 40px !important;
+    margin: 2rem auto !important;
+  }
+
+  /* Error States */
+  .error-message {
+    padding: 1rem !important;
+    background: var(--error-light) !important;
+    color: var(--error) !important;
+    border-radius: 8px !important;
+    margin: 1rem 0 !important;
+    text-align: center !important;
+  }
+
+  /* Success States */
+  .success-message {
+    padding: 1rem !important;
+    background: var(--success-light) !important;
+    color: var(--success) !important;
+    border-radius: 8px !important;
+    margin: 1rem 0 !important;
+    text-align: center !important;
+  }
+
+  /* Utility Classes */
+  .text-center-mobile {
+    text-align: center !important;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .show-mobile {
+    display: block !important;
+  }
+
+  .full-width-mobile {
+    width: 100% !important;
+  }
+
+  .no-padding-mobile {
+    padding: 0 !important;
+  }
+
+  .no-margin-mobile {
+    margin: 0 !important;
+  }
+}

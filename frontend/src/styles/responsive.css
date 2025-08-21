@@ -1,95 +1,172 @@
-/* Enhanced Responsive Styles */
+/* Complete Mobile Responsive Design */
 
-/* Mobile First Approach */
+/* Mobile First - All devices under 768px */
 @media (max-width: 768px) {
-  /* Contact Grid */
-  .contact-grid {
-    grid-template-columns: 1fr !important;
-    gap: 2rem !important;
+  /* Global Container */
+  .container {
+    padding: 0 1rem !important;
+    max-width: 100% !important;
   }
-  /* Grid Layouts */
-  .product-grid {
+
+  /* Typography - Mobile Optimized */
+  h1 {
+    font-size: 1.8rem !important;
+    line-height: 1.2 !important;
+  }
+  h2 {
+    font-size: 1.4rem !important;
+    line-height: 1.3 !important;
+  }
+  h3 {
+    font-size: 1.2rem !important;
+  }
+  p {
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+  }
+
+  /* All Grid Layouts */
+  .contact-grid,
+  .checkout-grid,
+  .product-grid,
+  .products-container,
+  .admin-grid,
+  .stats-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Form Elements */
+  .form-row {
     grid-template-columns: 1fr !important;
     gap: 1rem !important;
   }
   
-  .checkout-grid {
-    grid-template-columns: 1fr !important;
-    gap: 1.5rem !important;
+  input, textarea, select {
+    font-size: 16px !important;
+    padding: 0.875rem !important;
   }
 
-  /* Forms */
-  .form-row {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Buttons */
-  .btn {
-    width: 100% !important;
+  /* Buttons - Touch Friendly */
+  .btn, button {
+    min-height: 48px !important;
     padding: 0.875rem 1rem !important;
     font-size: 1rem !important;
+    border-radius: 8px !important;
   }
 
-  /* Typography */
-  h1 {
-    font-size: 2rem !important;
-  }
-  
-  h2 {
-    font-size: 1.5rem !important;
+  /* Cards & Content */
+  .card, .product-card {
+    margin: 0.5rem 0 !important;
+    padding: 1rem !important;
+    border-radius: 12px !important;
   }
 
-  /* Spacing */
-  .container {
-    padding: 0 1rem !important;
+  /* Tables - Scroll Horizontally */
+  table {
+    display: block !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
   }
 
   /* Chatbot */
   .chatbot-window {
-    width: 95vw !important;
-    height: 80vh !important;
+    width: 100vw !important;
+    height: 100vh !important;
     bottom: 0 !important;
     right: 0 !important;
-    border-radius: 16px 16px 0 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    border-radius: 0 !important;
+    position: fixed !important;
   }
 
-  /* Product Grid */
-  .products-container {
-    grid-template-columns: 1fr !important;
+  /* Images */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
   }
 
-  /* Admin Dashboard */
-  .admin-grid {
+  /* Cart Items */
+  .cart-item {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+
+  /* Product Detail */
+  .product-detail-grid {
     grid-template-columns: 1fr !important;
   }
 }
 
-/* Tablet */
+/* Tablet - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    padding: 0 2rem !important;
+  }
+  
   .product-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.5rem !important;
   }
   
   .checkout-grid {
     grid-template-columns: 1fr !important;
   }
+  
+  .contact-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  h1 {
+    font-size: 2.2rem !important;
+  }
 }
 
-/* Desktop */
+/* Desktop - 1025px and above */
 @media (min-width: 1025px) {
+  .container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 2rem !important;
+  }
+  
   .product-grid {
     grid-template-columns: repeat(3, 1fr) !important;
+    gap: 2rem !important;
   }
   
   .checkout-grid {
     grid-template-columns: 1fr 400px !important;
   }
+  
+  .contact-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
 }
 
-/* Touch Targets */
+/* Touch Devices */
 @media (hover: none) and (pointer: coarse) {
+  .btn, button, a, input, select, textarea {
+    min-height: 48px !important;
+    min-width: 48px !important;
+  }
+}
+
+/* Very Small Screens */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 0.75rem !important;
+  }
+  
+  h1 {
+    font-size: 1.6rem !important;
+  }
+  
   .btn {
-    min-height: 44px !important;
-    min-width: 44px !important;
+    padding: 0.75rem !important;
+    font-size: 0.9rem !important;
   }
 }

@@ -19,7 +19,7 @@ const RefundPolicyPage = () => {
                 🛑 Order Cancellations
               </h2>
               <ul style={{ lineHeight: '1.6', color: 'var(--text-secondary)', paddingLeft: '1.5rem' }}>
-                <li>Orders can only be canceled within 2 hours of placing the order.</li>
+                <li>Orders can only be cancelled within 2 hours of placing the order.</li>
                 <li>After 2 hours, the order will be considered confirmed and moved into processing.</li>
                 <li>Bulk or custom orders may have additional restrictions, which will be communicated at the time of order.</li>
               </ul>
@@ -40,7 +40,7 @@ const RefundPolicyPage = () => {
                 💵 Refunds
               </h2>
               <ul style={{ lineHeight: '1.6', color: 'var(--text-secondary)', paddingLeft: '1.5rem' }}>
-                <li>If an order is canceled within the allowed 2-hour window, a full refund will be issued.</li>
+                <li>If an order is cancelled within the allowed 2-hour window, a full refund will be issued.</li>
                 <li>Refunds are generally processed within 24 hours of cancellation confirmation.</li>
                 <li>Any unexpected delay in refund processing will be communicated directly to the customer.</li>
               </ul>
