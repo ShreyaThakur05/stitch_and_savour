@@ -20,7 +20,13 @@ import {
   CreditCard,
   Calendar,
   Search,
-  Download
+  Download,
+  Settings,
+  MapPin,
+  Phone,
+  Mail,
+  Edit3,
+  Plus
 } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -40,13 +46,66 @@ const UserDashboard = () => {
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [profileData, setProfileData] = useState({
+    fullName: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    gender: '',
+    dateOfBirth: '',
+    city: ''
+  });
+  const [addresses, setAddresses] = useState([]);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    type: 'home',
+    address: '',
+    city: '',
+    pincode: '',
+    landmark: ''
+  });
 
   useEffect(() => {
     fetchUserData();
+    loadProfileData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const loadProfileData = () => {
+    const savedProfile = localStorage.getItem(`userProfile_${user?.email}`);
+    const savedAddresses = localStorage.getItem(`userAddresses_${user?.email}`);
+    
+    if (savedProfile) {
+      setProfileData(JSON.parse(savedProfile));
+    }
+    if (savedAddresses) {
+      setAddresses(JSON.parse(savedAddresses));
+    }
+  };
 
+  const saveProfileData = () => {
+    localStorage.setItem(`userProfile_${user?.email}`, JSON.stringify(profileData));
+    showToast('Profile updated successfully!', 'success');
+  };
+
+  const addAddress = () => {
+    if (newAddress.address && newAddress.city && newAddress.pincode) {
+      const updatedAddresses = [...addresses, { ...newAddress, id: Date.now() }];
+      setAddresses(updatedAddresses);
+      localStorage.setItem(`userAddresses_${user?.email}`, JSON.stringify(updatedAddresses));
+      setNewAddress({ type: 'home', address: '', city: '', pincode: '', landmark: '' });
+      setShowAddressForm(false);
+      showToast('Address added successfully!', 'success');
+    } else {
+      showToast('Please fill all required fields', 'error');
+    }
+  };
+
+  const removeAddress = (id) => {
+    const updatedAddresses = addresses.filter(addr => addr.id !== id);
+    setAddresses(updatedAddresses);
+    localStorage.setItem(`userAddresses_${user?.email}`, JSON.stringify(updatedAddresses));
+    showToast('Address removed successfully!', 'success');
+  };
 
   const getGreetingMessage = () => {
     const hour = new Date().getHours();
@@ -64,32 +123,20 @@ const UserDashboard = () => {
 
   const fetchUserData = async () => {
     try {
-      // Get orders from backend with localStorage fallback
       const userOrders = await orderService.getUserOrders();
-      
-      // Filter orders to show only current user's orders
-      const currentUserOrders = userOrders.filter(order => 
-        order.customerName === user?.name || 
-        order.customerEmail === user?.email ||
-        order.userId === user?.id
-      );
-      
-      const formattedOrders = currentUserOrders.map(order => ({
-        _id: order.orderId || order._id,
+      const formattedOrders = userOrders.map(order => ({
+        _id: order.orderId || order._id || order.orderNumber,
         orderNumber: order.orderNumber || order.orderId,
-        total: order.total,
+        total: order.total || order.totalAmount,
         status: order.status || 'pending',
         paymentMethod: order.paymentMethod,
         createdAt: order.createdAt,
         estimatedDelivery: order.estimatedDelivery,
-        items: order.items,
-        customerPhone: order.customerPhone || user?.phone,
-        productImage: order.items?.[0]?.productImage || order.items?.[0]?.images?.[0] || '/images/placeholder.jpg',
-        productName: order.items?.[0]?.name || 'Order Items'
+        items: order.items || [],
+        customerPhone: order.customerPhone || user?.phone
       }));
       
       setOrders(formattedOrders);
-      // Calculate payment due for current user's COD orders only
       const userPaymentDue = formattedOrders
         .filter(o => o.paymentMethod === 'cod' && o.status !== 'delivered')
         .reduce((sum, o) => sum + o.total, 0);
@@ -117,11 +164,10 @@ const UserDashboard = () => {
     }
   };
 
-
-
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <User className="w-4 h-4" /> },
     { id: 'orders', label: 'My Orders', icon: <Package className="w-4 h-4" /> },
+    { id: 'profile', label: 'Profile Settings', icon: <Settings className="w-4 h-4" /> },
     { id: 'reviews', label: 'Write Review', icon: <Star className="w-4 h-4" /> },
     { id: 'categories', label: 'Shop Categories', icon: <ShoppingBag className="w-4 h-4" /> },
     { id: 'wishlist', label: 'Wishlist', icon: <Heart className="w-4 h-4" /> }
@@ -153,61 +199,6 @@ const UserDashboard = () => {
             <p style={{ opacity: '0.9', fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-strong)' }}>
               We're happy to see you again. Here's what's happening with your orders.
             </p>
-            {paymentDue > 0 && (
-              <div style={{
-                marginTop: '1.5rem',
-                background: 'var(--bg-secondary)',
-                borderRadius: '16px',
-                padding: '1.5rem',
-                border: '1px solid var(--border-color)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '1rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{
-                    padding: '0.75rem',
-                    background: 'rgba(249, 115, 22, 0.1)',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <CreditCard size={24} style={{ color: '#f97316' }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Payment Pending</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>₹{paymentDue}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>COD orders awaiting payment</div>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setShowPaymentModal(true)}
-                  style={{
-                  background: 'var(--primary-color)',
-                  color: 'white',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '12px',
-                  border: 'none',
-                  fontWeight: '600',
-                  fontSize: '0.9rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                }}>
-                  Pay Now
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -307,7 +298,7 @@ const UserDashboard = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="animate-scale-in" style={{
+        <div className="animate-scale-in dashboard-tabs-container" style={{
           background: 'var(--bg-secondary)',
           borderRadius: '16px',
           border: '1px solid var(--border-color)',
@@ -315,19 +306,24 @@ const UserDashboard = () => {
           overflow: 'hidden',
           animationDelay: '0.4s'
         }}>
-          <nav style={{
+          <nav className="dashboard-tabs" style={{
             display: 'flex',
             background: 'var(--bg-tertiary)',
             padding: '0.5rem',
-            gap: '0.25rem'
+            gap: '0.25rem',
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
           }}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                className="dashboard-tab"
                 style={{
-                  flex: 1,
-                  padding: '0.75rem 1rem',
+                  flex: window.innerWidth > 768 ? 1 : 'none',
+                  minWidth: window.innerWidth <= 768 ? '120px' : 'auto',
+                  padding: window.innerWidth <= 768 ? '0.6rem 0.8rem' : '0.75rem 1rem',
                   borderRadius: '12px',
                   background: activeTab === tab.id ? 'var(--bg-secondary)' : 'transparent',
                   border: 'none',
@@ -336,15 +332,16 @@ const UserDashboard = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
-                  fontSize: '0.85rem',
+                  fontSize: window.innerWidth <= 768 ? '0.75rem' : '0.85rem',
                   fontWeight: '600',
                   color: activeTab === tab.id ? 'var(--primary-color)' : 'var(--text-secondary)',
                   transition: 'all 0.2s ease',
-                  boxShadow: activeTab === tab.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                  boxShadow: activeTab === tab.id ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {tab.icon}
-                <span style={{ display: window.innerWidth > 640 ? 'block' : 'none' }}>{tab.label}</span>
+                <span style={{ display: window.innerWidth > 480 ? 'block' : 'none' }}>{tab.label}</span>
               </button>
             ))}
           </nav>
@@ -353,86 +350,29 @@ const UserDashboard = () => {
           <div style={{ padding: '1.5rem' }}>
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Orders</h3>
-                {orders.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--bg-tertiary)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🛍️</div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '1rem' }}>Ready to start shopping?</h3>
-                    <p style={{ color: 'var(--text-strong)', marginBottom: '2rem', lineHeight: '1.5' }}>
-                      Discover our amazing collection of handmade crochet items and delicious homemade food!
-                    </p>
-                    <button 
-                      onClick={() => navigate('/products')}
-                      style={{
-                        background: 'var(--primary-color)',
-                        color: 'white',
-                        padding: '1rem 2rem',
-                        borderRadius: '12px',
-                        border: 'none',
-                        fontSize: '1.1rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      Start Shopping
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {orders.slice(0, 3).map((order) => (
-                      <div key={order.id} style={{
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '12px',
-                        padding: '1rem',
-                        background: 'var(--bg-secondary)'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <img
-                            src={order.productImage}
-                            alt={order.productName}
-                            style={{
-                              width: '60px',
-                              height: '60px',
-                              objectFit: 'cover',
-                              borderRadius: '8px'
-                            }}
-                            onError={(e) => {
-                              e.target.src = '/images/placeholder.jpg';
-                            }}
-                          />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                              {getStatusIcon(order.status)}
-                              <p style={{ fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>Order #{order.orderNumber}</p>
-                            </div>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
-                              {order.productName}
-                            </p>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
-                              {new Date(order.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <span style={{
-                              padding: '0.25rem 0.5rem',
-                              borderRadius: '12px',
-                              fontSize: '0.7rem',
-                              fontWeight: '600',
-                              background: order.status === 'delivered' ? 'var(--success-light)' : 'var(--warning-light)',
-                              color: order.status === 'delivered' ? 'var(--success)' : 'var(--warning)'
-                            }}>
-                              {order.status.replace('-', ' ').toUpperCase()}
-                            </span>
-                            <p style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)', margin: '0.25rem 0 0 0' }}>
-                              ₹{order.total}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--bg-tertiary)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🛍️</div>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '1rem' }}>Welcome to your dashboard!</h3>
+                  <p style={{ color: 'var(--text-strong)', marginBottom: '2rem', lineHeight: '1.5' }}>
+                    Discover our amazing collection of handmade crochet items and delicious homemade food!
+                  </p>
+                  <button 
+                    onClick={() => navigate('/products')}
+                    style={{
+                      background: 'var(--primary-color)',
+                      color: 'white',
+                      padding: '1rem 2rem',
+                      borderRadius: '12px',
+                      border: 'none',
+                      fontSize: '1.1rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    Start Shopping
+                  </button>
+                </div>
               </div>
             )}
 
@@ -483,7 +423,7 @@ const UserDashboard = () => {
                 ) : (
                   <div className="space-y-4">
                     {filteredOrders.map((order) => (
-                      <div key={order.id} style={{
+                      <div key={order._id || order.orderNumber} style={{
                         border: '1px solid var(--border-color)',
                         borderRadius: '12px',
                         padding: '1.5rem',
@@ -491,22 +431,11 @@ const UserDashboard = () => {
                         marginBottom: '1rem'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                          <img
-                            src={order.productImage}
-                            alt={order.productName}
-                            style={{
-                              width: '80px',
-                              height: '80px',
-                              objectFit: 'cover',
-                              borderRadius: '8px'
-                            }}
-                            onError={(e) => {
-                              e.target.src = '/images/placeholder.jpg';
-                            }}
-                          />
                           <div style={{ flex: 1 }}>
                             <h4 style={{ fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>Order #{order.orderNumber}</h4>
-                            <p style={{ fontSize: '1rem', color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>{order.items?.[0]?.name || 'Order Items'}</p>
+                            <p style={{ fontSize: '1rem', color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>
+                              {order.items?.length || 0} item(s) - {order.items?.map(item => item.name).join(', ') || 'Order Items'}
+                            </p>
                             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
                               Placed on {new Date(order.createdAt).toLocaleDateString()}
                             </p>
@@ -525,103 +454,8 @@ const UserDashboard = () => {
                           </div>
                         </div>
                         
-                        {/* Order Tracking Bar */}
-                        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                          <h5 style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Package size={16} />
-                            Order Progress
-                          </h5>
-                          <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                            {/* Progress Line */}
-                            <div style={{ position: 'absolute', top: '20px', left: '20px', right: '20px', height: '3px', background: 'var(--border-color)', borderRadius: '2px' }}>
-                              <div 
-                                style={{
-                                  height: '100%',
-                                  borderRadius: '2px',
-                                  transition: 'all 0.5s ease',
-                                  background: 'linear-gradient(90deg, var(--primary-color), var(--secondary-color))',
-                                  width: order.status === 'pending' ? '0%' :
-                                         order.status === 'received' ? '25%' :
-                                         order.status === 'in-progress' ? '50%' :
-                                         order.status === 'out-for-delivery' ? '75%' :
-                                         order.status === 'delivered' ? '100%' : '0%'
-                                }}
-                              />
-                            </div>
-                            {/* Status Steps */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
-                              {[
-                                { key: 'received', label: 'Order Received', icon: <CheckCircle size={14} /> },
-                                { key: 'in-progress', label: 'In Progress', icon: <Clock size={14} /> },
-                                { key: 'out-for-delivery', label: 'Out for Delivery', icon: <Truck size={14} /> },
-                                { key: 'delivered', label: 'Delivered', icon: <Package size={14} /> }
-                              ].map((step, index) => {
-                                // Define step order
-                                const stepOrder = { 'pending': 0, 'received': 1, 'in-progress': 2, 'out-for-delivery': 3, 'delivered': 4 };
-                                const currentStepIndex = stepOrder[order.status] || 0;
-                                const thisStepIndex = index + 1;
-                                
-                                // Step is completed if current status is beyond this step
-                                const isCompleted = currentStepIndex > thisStepIndex;
-                                // Step is current if this is the current status
-                                const isCurrent = currentStepIndex === thisStepIndex;
-                                // Step is active if it's completed or current
-                                const isActive = isCompleted || isCurrent;
-                                
-                                return (
-                                  <div key={step.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-                                    <div style={{
-                                      width: '40px',
-                                      height: '40px',
-                                      borderRadius: '50%',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      marginBottom: '0.5rem',
-                                      background: isActive ? 'var(--primary-color)' : 'var(--bg-secondary)',
-                                      border: `2px solid ${isActive ? 'var(--primary-color)' : 'var(--border-color)'}`,
-                                      color: isActive ? 'white' : 'var(--text-secondary)',
-                                      transition: 'all 0.3s ease',
-                                      boxShadow: isCurrent ? '0 0 0 4px rgba(217, 70, 239, 0.2)' : 'none'
-                                    }}>
-                                      {step.icon}
-                                    </div>
-                                    <div style={{
-                                      fontSize: '0.75rem',
-                                      fontWeight: isActive ? '600' : '400',
-                                      color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                      textAlign: 'center',
-                                      lineHeight: '1.2'
-                                    }}>
-                                      {step.label}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                        
                         <div style={{ borderTop: '1px solid var(--border-color)', marginTop: '1rem', paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'var(--info-light)', borderRadius: '8px' }}>
-                              <Calendar size={16} style={{ color: 'var(--info)' }} />
-                              <div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--info)', fontWeight: '500' }}>Expected Delivery</div>
-                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                  {order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Processing'}
-                                </div>
-                              </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: order.paymentMethod === 'qr' ? 'var(--success-light)' : 'var(--warning-light)', borderRadius: '8px' }}>
-                              <CreditCard size={16} style={{ color: order.paymentMethod === 'qr' ? 'var(--success)' : 'var(--warning)' }} />
-                              <div>
-                                <div style={{ fontSize: '0.75rem', color: order.paymentMethod === 'qr' ? 'var(--success)' : 'var(--warning)', fontWeight: '500' }}>Payment</div>
-                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                  {order.paymentMethod === 'qr' ? 'PAID' : 'Cash on Delivery'}
-                                </div>
-                              </div>
-                            </div>
                             <button
                               onClick={() => {
                                 generateInvoicePDF(order);
@@ -642,14 +476,6 @@ const UserDashboard = () => {
                                 transition: 'all 0.2s ease',
                                 boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
                               }}
-                              onMouseEnter={(e) => {
-                                e.target.style.transform = 'translateY(-1px)';
-                                e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.transform = 'translateY(0)';
-                                e.target.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.3)';
-                              }}
                             >
                               <Download size={16} />
                               Download Invoice
@@ -659,37 +485,416 @@ const UserDashboard = () => {
                             Total: ₹{order.total}
                           </div>
                         </div>
-                        
-                        {order.status === 'delivered' && !order.reviewed && (
-                          <div style={{
-                            marginTop: '1rem',
-                            padding: '1rem',
-                            background: 'var(--warning-light)',
-                            borderRadius: '8px'
-                          }}>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--warning)', margin: '0 0 0.5rem 0' }}>
-                              How was your experience? Leave a review!
-                            </p>
-                            <button
-                              onClick={() => setActiveTab('reviews')}
-                              style={{
-                                background: 'var(--warning)',
-                                color: 'white',
-                                padding: '0.5rem 1rem',
-                                borderRadius: '8px',
-                                border: 'none',
-                                fontSize: '0.8rem',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Write Review
-                            </button>
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'profile' && (
+              <div style={{ maxWidth: '600px' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '2rem',
+                  padding: '1rem',
+                  background: 'var(--bg-tertiary)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)'
+                }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>Profile Settings</h3>
+                  <Settings size={24} style={{ color: 'var(--primary-color)' }} />
+                </div>
+
+                {/* Personal Information */}
+                <div style={{
+                  background: 'var(--bg-secondary)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  marginBottom: '2rem',
+                  border: '1px solid var(--border-color)'
+                }}>
+                  <h4 style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <User size={20} style={{ color: 'var(--primary-color)' }} />
+                    Personal Information
+                  </h4>
+                  
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Full Name</label>
+                      <input
+                        type="text"
+                        value={profileData.fullName}
+                        onChange={(e) => setProfileData({...profileData, fullName: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          background: 'var(--bg-primary)',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Email Address</label>
+                      <input
+                        type="email"
+                        value={profileData.email}
+                        onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          background: 'var(--bg-primary)',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Phone Number</label>
+                      <input
+                        type="tel"
+                        value={profileData.phone}
+                        onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          background: 'var(--bg-primary)',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                    </div>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Gender</label>
+                        <select
+                          value={profileData.gender}
+                          onChange={(e) => setProfileData({...profileData, gender: e.target.value})}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '8px',
+                            background: 'var(--bg-primary)',
+                            color: 'var(--text-primary)',
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Date of Birth</label>
+                        <input
+                          type="date"
+                          value={profileData.dateOfBirth}
+                          onChange={(e) => setProfileData({...profileData, dateOfBirth: e.target.value})}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '8px',
+                            background: 'var(--bg-primary)',
+                            color: 'var(--text-primary)',
+                            fontSize: '0.9rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>City</label>
+                      <input
+                        type="text"
+                        value={profileData.city}
+                        onChange={(e) => setProfileData({...profileData, city: e.target.value})}
+                        placeholder="Enter your city"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          background: 'var(--bg-primary)',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Saved Addresses */}
+                <div style={{
+                  background: 'var(--bg-secondary)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  marginBottom: '2rem',
+                  border: '1px solid var(--border-color)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                    <h4 style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <MapPin size={20} style={{ color: 'var(--primary-color)' }} />
+                      Saved Addresses
+                    </h4>
+                    <button
+                      onClick={() => setShowAddressForm(!showAddressForm)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        background: 'var(--primary-color)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Plus size={16} />
+                      Add new address
+                    </button>
+                  </div>
+                  
+                  {showAddressForm && (
+                    <div style={{
+                      background: 'var(--bg-tertiary)',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      marginBottom: '1rem',
+                      border: '1px solid var(--border-color)'
+                    }}>
+                      <div style={{ display: 'grid', gap: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Address Type</label>
+                          <select
+                            value={newAddress.type}
+                            onChange={(e) => setNewAddress({...newAddress, type: e.target.value})}
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '8px',
+                              background: 'var(--bg-primary)',
+                              color: 'var(--text-primary)',
+                              fontSize: '0.9rem'
+                            }}
+                          >
+                            <option value="home">Home</option>
+                            <option value="work">Work</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                        
+                        <div>
+                          <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Full Address</label>
+                          <textarea
+                            value={newAddress.address}
+                            onChange={(e) => setNewAddress({...newAddress, address: e.target.value})}
+                            rows={3}
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '8px',
+                              background: 'var(--bg-primary)',
+                              color: 'var(--text-primary)',
+                              fontSize: '0.9rem',
+                              resize: 'vertical'
+                            }}
+                          />
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                          <div>
+                            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>City</label>
+                            <input
+                              type="text"
+                              value={newAddress.city}
+                              onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                background: 'var(--bg-primary)',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.9rem'
+                              }}
+                            />
+                          </div>
+                          
+                          <div>
+                            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Pincode</label>
+                            <input
+                              type="text"
+                              value={newAddress.pincode}
+                              onChange={(e) => setNewAddress({...newAddress, pincode: e.target.value})}
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                background: 'var(--bg-primary)',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.9rem'
+                              }}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Landmark (Optional)</label>
+                          <input
+                            type="text"
+                            value={newAddress.landmark}
+                            onChange={(e) => setNewAddress({...newAddress, landmark: e.target.value})}
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '8px',
+                              background: 'var(--bg-primary)',
+                              color: 'var(--text-primary)',
+                              fontSize: '0.9rem'
+                            }}
+                          />
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => setShowAddressForm(false)}
+                            style={{
+                              padding: '0.75rem 1.5rem',
+                              background: 'var(--text-secondary)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '0.9rem',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={addAddress}
+                            style={{
+                              padding: '0.75rem 1.5rem',
+                              background: 'var(--primary-color)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '0.9rem',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Save Address
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {addresses.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                      <MapPin size={48} style={{ margin: '0 auto 1rem auto', opacity: 0.5 }} />
+                      <p>No saved addresses yet</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {addresses.map((address) => (
+                        <div key={address.id} style={{
+                          padding: '1rem',
+                          background: 'var(--bg-tertiary)',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-color)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start'
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <span style={{
+                                padding: '0.25rem 0.75rem',
+                                background: 'var(--primary-color)',
+                                color: 'white',
+                                borderRadius: '12px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                textTransform: 'uppercase'
+                              }}>
+                                {address.type}
+                              </span>
+                            </div>
+                            <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)', lineHeight: '1.4' }}>{address.address}</p>
+                            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                              {address.city} - {address.pincode}
+                              {address.landmark && ` • ${address.landmark}`}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => removeAddress(address.id)}
+                            style={{
+                              padding: '0.5rem',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                              marginLeft: '1rem'
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Save Button */}
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={saveProfileData}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '1rem 2rem',
+                      background: 'var(--primary-color)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '1rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <Edit3 size={18} />
+                    Save Changes
+                  </button>
+                </div>
               </div>
             )}
 
@@ -721,18 +926,6 @@ const UserDashboard = () => {
                       )) || []
                     )}
                   </select>
-                  {orders.filter(order => order.status === 'delivered').length === 0 && (
-                    <div style={{ 
-                      fontSize: '0.8rem', 
-                      color: 'var(--text-secondary)', 
-                      marginTop: '0.5rem',
-                      padding: '0.75rem',
-                      background: 'var(--bg-tertiary)',
-                      borderRadius: '6px'
-                    }}>
-                      📦 No delivered orders yet. Reviews can only be written for delivered products.
-                    </div>
-                  )}
                 </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -1111,118 +1304,38 @@ const UserDashboard = () => {
                 )}
               </div>
             )}
-
-
           </div>
         </div>
-
-
-        
-        {/* Payment Modal */}
-        {showPaymentModal && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999
-          }}>
-            <div style={{
-              background: 'var(--bg-primary)',
-              borderRadius: '16px',
-              padding: '2rem',
-              maxWidth: '400px',
-              width: '90%',
-              border: '1px solid var(--border-color)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Payment Options</h3>
-                <button 
-                  onClick={() => setShowPaymentModal(false)}
-                  style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-secondary)' }}
-                >
-                  ×
-                </button>
-              </div>
-              
-              <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Amount to Pay</div>
-                <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--primary-color)' }}>₹{paymentDue}</div>
-              </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <button
-                  onClick={() => {
-                    const qrCodeUrl = `upi://pay?pa=sangita.shreyas@paytm&pn=Sangita%20Thakur&am=${paymentDue}&cu=INR&tn=Payment%20for%20Stitch%20and%20Savour%20Orders`;
-                    window.open(qrCodeUrl, '_blank');
-                    showToast('Opening UPI payment...', 'success');
-                    setShowPaymentModal(false);
-                  }}
-                  style={{
-                    background: 'var(--primary-color)',
-                    color: 'white',
-                    padding: '1rem',
-                    borderRadius: '12px',
-                    border: 'none',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem'
-                  }}
-                >
-                  📱 Pay with UPI Apps
-                </button>
-                
-                <button
-                  onClick={() => {
-                    const newWindow = window.open('', '_blank');
-                    newWindow.document.write(`
-                      <html>
-                        <head><title>QR Code Payment</title></head>
-                        <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:Arial;background:#f5f5f5">
-                          <h2>Scan QR Code to Pay</h2>
-                          <img src="/images/payment-qr-code.jpg" alt="Payment QR Code" style="border:1px solid #ddd;padding:20px;background:white;border-radius:10px;max-width:300px">
-                          <p style="margin-top:20px;text-align:center;color:#666">Amount: ₹${paymentDue}<br>Scan with any UPI app</p>
-                          <p style="text-align:center;color:#999;font-size:0.9rem">Pay to: Sangita Thakur</p>
-                        </body>
-                      </html>
-                    `);
-                    showToast('QR Code opened in new tab', 'success');
-                    setShowPaymentModal(false);
-                  }}
-                  style={{
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    padding: '1rem',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-color)',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem'
-                  }}
-                >
-                  📷 Show QR Code
-                </button>
-              </div>
-              
-              <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                Secure payment via UPI • No additional charges
-              </div>
-            </div>
-          </div>
-        )}
-
       </div>
+      
+      <style jsx>{`
+        .dashboard-tabs::-webkit-scrollbar {
+          display: none;
+        }
+        .dashboard-tabs {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        
+        @media (max-width: 768px) {
+          .dashboard-tabs-container {
+            margin: 0 -1rem 2rem -1rem !important;
+            border-radius: 0 !important;
+            border-left: none !important;
+            border-right: none !important;
+          }
+          
+          .dashboard-tabs {
+            padding: 0.5rem 1rem !important;
+          }
+          
+          .dashboard-tab {
+            font-size: 0.7rem !important;
+            padding: 0.5rem 0.6rem !important;
+            min-width: 100px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

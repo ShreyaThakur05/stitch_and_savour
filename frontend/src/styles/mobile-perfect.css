@@ -298,3 +298,256 @@
     padding: 8px 16px !important;
   }
 }
+
+/* Enhanced Mobile UI Improvements */
+@media screen and (max-width: 768px) {
+  
+  /* Chatbot and WhatsApp - Small Circles */
+  .chatbot-toggle, .whatsapp-float, [class*="chatbot"], [class*="whatsapp"] {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    position: fixed !important;
+    z-index: 1000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    font-size: 20px !important;
+  }
+  
+  .chatbot-toggle {
+    bottom: 80px !important;
+    right: 20px !important;
+    background: #6366f1 !important;
+    color: white !important;
+  }
+  
+  .whatsapp-float {
+    bottom: 20px !important;
+    right: 20px !important;
+    background: #25d366 !important;
+    color: white !important;
+  }
+  
+  /* Dashboard Navigation - Vertical for Mobile */
+  .dashboard-tabs-container {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    background: var(--bg-secondary) !important;
+    backdrop-filter: blur(10px) !important;
+  }
+  
+  .dashboard-tabs {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 0.5rem 1rem !important;
+    gap: 0.5rem !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  
+  .dashboard-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  .dashboard-tab {
+    flex-shrink: 0 !important;
+    min-width: 90px !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    border-radius: 20px !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .dashboard-tab span {
+    display: block !important;
+    margin-top: 2px !important;
+  }
+  
+  /* Main Navigation - Better Mobile */
+  .navbar, nav[class*="nav"] {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 999 !important;
+    padding: 8px 16px !important;
+    backdrop-filter: blur(10px) !important;
+    border-bottom: 1px solid rgba(0,0,0,0.1) !important;
+  }
+  
+  .navbar .nav-links {
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  
+  .navbar .nav-link {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 8px 12px !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    border-radius: 12px !important;
+    min-width: 60px !important;
+    text-align: center !important;
+  }
+  
+  .navbar .nav-link svg {
+    width: 18px !important;
+    height: 18px !important;
+    margin-bottom: 2px !important;
+  }
+  
+  /* Profile Settings - Mobile Optimized */
+  .profile-form input,
+  .profile-form select,
+  .profile-form textarea {
+    font-size: 16px !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+    border: 2px solid #e2e8f0 !important;
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .profile-form input:focus,
+  .profile-form select:focus,
+  .profile-form textarea:focus {
+    border-color: var(--primary-color) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  }
+  
+  /* Address Cards - Mobile Friendly */
+  .address-card {
+    padding: 12px !important;
+    margin-bottom: 12px !important;
+    border-radius: 12px !important;
+    background: var(--bg-tertiary) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+  
+  .address-card .address-type {
+    font-size: 0.7rem !important;
+    padding: 4px 8px !important;
+    border-radius: 8px !important;
+    background: var(--primary-color) !important;
+    color: white !important;
+    display: inline-block !important;
+    margin-bottom: 8px !important;
+  }
+  
+  /* Grid Layouts - Force Single Column */
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="gridTemplateColumns: '1fr 1fr'"] {
+    display: block !important;
+  }
+  
+  [style*="grid-template-columns: 1fr 1fr"] > *,
+  [style*="gridTemplateColumns: '1fr 1fr'"] > * {
+    margin-bottom: 12px !important;
+  }
+  
+  /* Buttons - Touch Friendly */
+  button[style*="display: flex"] {
+    min-height: 44px !important;
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  button:active {
+    transform: scale(0.98) !important;
+  }
+  
+  /* Modal/Form Improvements */
+  .modal-content, .form-container {
+    padding: 16px !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+  
+  /* Stats Cards - Better Mobile Layout */
+  .stats-grid {
+    display: block !important;
+    gap: 12px !important;
+  }
+  
+  .stats-card {
+    margin-bottom: 12px !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+  }
+  
+  /* Tab Content - Mobile Spacing */
+  .tab-content {
+    padding: 16px !important;
+    margin: 0 -16px !important;
+  }
+  
+  /* Order Cards - Mobile Layout */
+  .order-card {
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+    border-radius: 12px !important;
+  }
+  
+  .order-card .order-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  
+  .order-card .order-actions {
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  
+  .order-card .order-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+/* Very Small Phones - Extra Compact */
+@media screen and (max-width: 375px) {
+  .dashboard-tab {
+    min-width: 80px !important;
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.65rem !important;
+  }
+  
+  .chatbot-toggle, .whatsapp-float {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 18px !important;
+  }
+  
+  .navbar .nav-link {
+    min-width: 50px !important;
+    padding: 6px 8px !important;
+    font-size: 0.65rem !important;
+  }
+  
+  .navbar .nav-link svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
