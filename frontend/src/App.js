@@ -32,6 +32,7 @@ import RefundPolicyPage from './pages/RefundPolicyPage';
 import './App.css';
 import './styles/responsive.css';
 import './styles/mobile.css';
+import './styles/mobile-fix.css';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
