@@ -39,7 +39,6 @@ class PaymentService {
   // Auto-detect available payment apps
   detectPaymentApps() {
     const apps = [];
-    const userAgent = navigator.userAgent.toLowerCase();
     
     // Check for installed UPI apps (basic detection)
     const appChecks = [
@@ -159,4 +158,5 @@ class PaymentService {
   }
 }
 
-export default new PaymentService();
+const paymentService = new PaymentService();
+export default paymentService;

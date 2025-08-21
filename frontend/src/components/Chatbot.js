@@ -33,7 +33,7 @@ const Chatbot = () => {
 
   const generateResponse = async (userMessage) => {
     try {
-      const response = await fetch('/api/chatbot/query', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/chatbot/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

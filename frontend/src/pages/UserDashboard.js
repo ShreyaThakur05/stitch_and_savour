@@ -11,27 +11,21 @@ import {
   ShoppingBag, 
   Heart, 
   User, 
-  MapPin, 
-  Phone, 
-  Mail,
   Clock,
   CheckCircle,
   Truck,
   Star,
   MessageCircle,
   CreditCard,
-  AlertCircle,
   Calendar,
   Search,
-  Filter,
-  Download,
-  Eye
+  Download
 } from 'lucide-react';
 
 const UserDashboard = () => {
   const { user } = useAuth();
   const { cartItems, addToCart } = useCart();
-  const { wishlistItems, removeFromWishlist, addToWishlist } = useWishlist();
+  const { wishlistItems, removeFromWishlist } = useWishlist();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
@@ -48,17 +42,10 @@ const UserDashboard = () => {
 
   useEffect(() => {
     fetchUserData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const getExpectedDeliveryDate = (productType, orderDate) => {
-    const date = new Date(orderDate);
-    if (productType === 'food') {
-      date.setDate(date.getDate() + 2); // 2 days for food
-    } else if (productType === 'crochet') {
-      date.setDate(date.getDate() + 14); // 2 weeks for crochet
-    }
-    return date;
-  };
+
 
   const getGreetingMessage = () => {
     const hour = new Date().getHours();
@@ -126,22 +113,7 @@ const UserDashboard = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'received':
-        return 'bg-blue-100 text-blue-800';
-      case 'in-progress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'out-for-delivery':
-        return 'bg-orange-100 text-orange-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <User className="w-4 h-4" /> },
