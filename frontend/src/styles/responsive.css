@@ -1,0 +1,95 @@
+/* Enhanced Responsive Styles */
+
+/* Mobile First Approach */
+@media (max-width: 768px) {
+  /* Contact Grid */
+  .contact-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+  /* Grid Layouts */
+  .product-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .checkout-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Forms */
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Buttons */
+  .btn {
+    width: 100% !important;
+    padding: 0.875rem 1rem !important;
+    font-size: 1rem !important;
+  }
+
+  /* Typography */
+  h1 {
+    font-size: 2rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+
+  /* Spacing */
+  .container {
+    padding: 0 1rem !important;
+  }
+
+  /* Chatbot */
+  .chatbot-window {
+    width: 95vw !important;
+    height: 80vh !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+
+  /* Product Grid */
+  .products-container {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Admin Dashboard */
+  .admin-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .checkout-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  
+  .checkout-grid {
+    grid-template-columns: 1fr 400px !important;
+  }
+}
+
+/* Touch Targets */
+@media (hover: none) and (pointer: coarse) {
+  .btn {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+}

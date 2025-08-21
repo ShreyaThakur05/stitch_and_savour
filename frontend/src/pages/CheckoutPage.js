@@ -534,7 +534,7 @@ const CheckoutPage = () => {
           </p>
         </div>
 
-        <div style={{ 
+        <div className="checkout-grid" style={{ 
           display: 'grid',
           gridTemplateColumns: '1fr 400px',
           gap: '2rem'

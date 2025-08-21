@@ -39,7 +39,12 @@ export const generateInvoicePDF = (order) => {
   const fullOrder = storedOrders.find(o => o.orderNumber === order.orderNumber) || order;
   
   pdf.text(`Name: ${order.customerName || fullOrder.customerName || 'Customer'}`, 20, 75);
-  pdf.text(`Phone: ${order.phone || fullOrder.phone || 'N/A'}`, 20, 82);
+  
+  // Get phone from order or user profile, avoid 'N/A'
+  const phoneNumber = order.customerPhone || fullOrder.customerPhone || order.phone || fullOrder.phone;
+  if (phoneNumber && phoneNumber !== 'N/A') {
+    pdf.text(`Phone: ${phoneNumber}`, 20, 82);
+  }
   
   // Payment Method
   pdf.text(`Payment: ${order.paymentMethod === 'qr' ? 'Online Payment' : 'Cash on Delivery'}`, 120, 75);

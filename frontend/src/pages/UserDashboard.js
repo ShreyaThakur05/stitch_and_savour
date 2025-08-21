@@ -67,7 +67,14 @@ const UserDashboard = () => {
       // Get orders from backend with localStorage fallback
       const userOrders = await orderService.getUserOrders();
       
-      const formattedOrders = userOrders.map(order => ({
+      // Filter orders to show only current user's orders
+      const currentUserOrders = userOrders.filter(order => 
+        order.customerName === user?.name || 
+        order.customerEmail === user?.email ||
+        order.userId === user?.id
+      );
+      
+      const formattedOrders = currentUserOrders.map(order => ({
         _id: order.orderId || order._id,
         orderNumber: order.orderNumber || order.orderId,
         total: order.total,
@@ -76,6 +83,7 @@ const UserDashboard = () => {
         createdAt: order.createdAt,
         estimatedDelivery: order.estimatedDelivery,
         items: order.items,
+        customerPhone: order.customerPhone || user?.phone,
         productImage: order.items?.[0]?.productImage || order.items?.[0]?.images?.[0] || '/images/placeholder.jpg',
         productName: order.items?.[0]?.name || 'Order Items'
       }));

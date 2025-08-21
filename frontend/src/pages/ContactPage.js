@@ -67,7 +67,7 @@ const ContactPage = () => {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', marginBottom: '3rem' }}>
+        <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', marginBottom: '3rem' }}>
           <div style={{ background: 'var(--bg-secondary)', padding: '2.5rem', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '1.5rem' }}>Send us a Message</h2>
             
@@ -342,7 +342,7 @@ const ContactPage = () => {
                 <div>
                   <h4 style={{ margin: 0, marginBottom: '0.25rem' }}>Location</h4>
                   <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-                    Sirul, Maharashtra, India
+                    Pune, Maharashtra, India
                   </p>
                 </div>
               </div>
