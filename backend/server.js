@@ -19,6 +19,8 @@ const dashboardRoutes = require('./routes/dashboard');
 const chatbotRoutes = require('./routes/chatbot');
 const contactRoutes = require('./routes/contact');
 const reviewRoutes = require('./routes/reviews');
+const wishlistRoutes = require('./routes/wishlist');
+const cartRoutes = require('./routes/cart');
 
 const app = express();
 
@@ -59,6 +61,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

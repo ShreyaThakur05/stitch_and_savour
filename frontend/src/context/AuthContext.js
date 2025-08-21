@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
+import userService from '../services/userService';
 
 const AuthContext = createContext();
 
@@ -90,21 +91,13 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (updatedData) => {
     try {
-      const updatedUser = { ...user, ...updatedData };
-      setUser(updatedUser);
-      localStorage.setItem('stitch_savour_user', JSON.stringify(updatedUser));
-
-      // Update in registered users if not admin
-      if (user.role !== 'admin') {
-        const registeredUsers = JSON.parse(localStorage.getItem('stitch_savour_registered_users') || '[]');
-        const userIndex = registeredUsers.findIndex(u => u.id === user.id);
-        if (userIndex > -1) {
-          registeredUsers[userIndex] = { ...registeredUsers[userIndex], ...updatedData };
-          localStorage.setItem('stitch_savour_registered_users', JSON.stringify(registeredUsers));
-        }
+      const result = await userService.updateProfile(updatedData);
+      if (result.success) {
+        const updatedUser = { ...user, ...updatedData };
+        setUser(updatedUser);
+        return true;
       }
-
-      return true;
+      return false;
     } catch (error) {
       console.error('Profile update error:', error);
       return false;

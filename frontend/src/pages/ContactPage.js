@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MessageCircle, MapPin, Clock, Send } from 'lucide-react';
+import contactService from '../services/contactService';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -28,18 +29,12 @@ const ContactPage = () => {
     setSuccess('');
 
     try {
-      // Try backend API first
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/contact/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+      const result = await contactService.submitMessage({
+        ...formData,
+        subject: formData.subject === 'others' ? formData.customSubject : formData.subject
       });
-
-      const data = await response.json();
-
-      if (data.success) {
+      
+      if (result.success) {
         setSuccess('Message sent successfully! We\'ll get back to you soon.');
         setFormData({
           name: '',
@@ -50,36 +45,11 @@ const ContactPage = () => {
           message: ''
         });
       } else {
-        setError(data.message || 'Failed to send message. Please try again.');
+        setError('Failed to send message. Please try again.');
       }
     } catch (error) {
       console.error('Contact form error:', error);
-      
-      // Fallback: Store in localStorage for admin to see
-      try {
-        const contactMessage = {
-          id: Date.now(),
-          ...formData,
-          createdAt: new Date().toISOString(),
-          status: 'pending'
-        };
-        
-        const existingMessages = JSON.parse(localStorage.getItem('contactMessages') || '[]');
-        existingMessages.push(contactMessage);
-        localStorage.setItem('contactMessages', JSON.stringify(existingMessages));
-        
-        setSuccess('Message saved successfully! We\'ll get back to you soon.');
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          subject: '',
-          customSubject: '',
-          message: ''
-        });
-      } catch (fallbackError) {
-        setError('Failed to send message. Please try again later.');
-      }
+      setError('Failed to send message. Please try again later.');
     } finally {
       setLoading(false);
     }

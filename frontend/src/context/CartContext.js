@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import cartService from '../services/cartService';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
 
@@ -14,6 +16,7 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -27,10 +30,13 @@ export const CartProvider = ({ children }) => {
     }
   }, []);
 
-  // Save cart to localStorage whenever it changes
+  // Save cart to localStorage and sync to backend whenever it changes
   useEffect(() => {
     localStorage.setItem('stitch_savour_cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (user && cartItems.length > 0) {
+      cartService.syncCart(cartItems);
+    }
+  }, [cartItems, user]);
 
   const addToCart = (product, quantity = 1, customizations = {}, selectedWeight = '') => {
     // Calculate final price including customizations and weight
@@ -110,9 +116,12 @@ export const CartProvider = ({ children }) => {
     );
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
     setCartItems([]);
     localStorage.removeItem('stitch_savour_cart');
+    if (user) {
+      await cartService.clearCart();
+    }
   };
 
   const getCartTotal = () => {

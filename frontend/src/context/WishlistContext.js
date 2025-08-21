@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import wishlistService from '../services/wishlistService';
 
 const WishlistContext = createContext();
 
@@ -26,19 +27,27 @@ export const WishlistProvider = ({ children }) => {
     }
   }, [user]);
 
-  const addToWishlist = (product) => {
+  const addToWishlist = async (product) => {
     if (user && !wishlistItems.find(item => item._id === product._id)) {
-      const newItems = [...wishlistItems, product];
-      setWishlistItems(newItems);
-      localStorage.setItem(`wishlist_${user.email}`, JSON.stringify(newItems));
+      try {
+        await wishlistService.addToWishlist(product, user.email);
+        const newItems = [...wishlistItems, product];
+        setWishlistItems(newItems);
+      } catch (error) {
+        console.error('Failed to add to wishlist:', error);
+      }
     }
   };
 
-  const removeFromWishlist = (productId) => {
+  const removeFromWishlist = async (productId) => {
     if (user) {
-      const newItems = wishlistItems.filter(item => item._id !== productId);
-      setWishlistItems(newItems);
-      localStorage.setItem(`wishlist_${user.email}`, JSON.stringify(newItems));
+      try {
+        await wishlistService.removeFromWishlist(productId, user.email);
+        const newItems = wishlistItems.filter(item => item._id !== productId);
+        setWishlistItems(newItems);
+      } catch (error) {
+        console.error('Failed to remove from wishlist:', error);
+      }
     }
   };
 
