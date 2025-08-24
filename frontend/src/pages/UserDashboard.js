@@ -161,7 +161,7 @@ const UserDashboard = () => {
       let userOrders = [];
       
       try {
-        // Try to get orders from database
+        // Database-only approach
         const response = await fetch(`${process.env.REACT_APP_API_URL}/orders`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -173,13 +173,12 @@ const UserDashboard = () => {
           userOrders = data.orders;
           console.log('👤 User orders from database:', userOrders.length);
         } else {
-          throw new Error('API returned unsuccessful response');
+          console.error('Failed to load orders from database');
+          userOrders = [];
         }
       } catch (apiError) {
-        console.error('Failed to load orders from API:', apiError);
-        // Fallback to localStorage only if API completely fails
-        userOrders = await orderService.getUserOrders();
-        console.log('👤 User orders from localStorage fallback:', userOrders.length);
+        console.error('Database connection failed:', apiError);
+        userOrders = [];
       }
       
       const formattedOrders = userOrders.map(order => ({
@@ -1527,11 +1526,14 @@ const UserDashboard = () => {
                       
                       try {
                         await reviewService.createReview({
+                          productId: productName, // Backend expects productId/product field
                           productName,
                           orderNumber,
                           rating,
                           review: reviewText.trim(),
-                          customerName: user?.name || 'Anonymous'
+                          comment: reviewText.trim(), // Backend expects comment field
+                          customerName: user?.name || 'Anonymous',
+                          customerEmail: user?.email || ''
                         });
                         
                         showToast('Review submitted successfully! Thank you for your feedback.', 'success');

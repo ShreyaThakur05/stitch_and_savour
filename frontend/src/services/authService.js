@@ -25,13 +25,22 @@ api.interceptors.request.use(
   }
 );
 
-// Handle token expiration
+// Handle token expiration and auth errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      const errorCode = error.response?.data?.code;
+      
+      // Clear all auth data
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('stitch_savour_user');
+      
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/signup')) {
+        console.log('Token expired or invalid, redirecting to login');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

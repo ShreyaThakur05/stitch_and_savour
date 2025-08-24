@@ -218,7 +218,7 @@ const ProductsPage = () => {
     const loadProducts = async () => {
       try {
         // Try to load products from database first
-        const response = await fetch(`${config.API_URL}/products`);
+        const response = await fetch(`${config.API_URL}/admin-products`);
         const data = await response.json();
         if (data.success) {
           setProducts(data.products);
@@ -227,20 +227,11 @@ const ProductsPage = () => {
           return;
         }
       } catch (error) {
-        console.warn('Database unavailable, using localStorage fallback:', error);
+        console.error('Database unavailable:', error);
+        setProducts([]);
+        setFilteredProducts([]);
+        setLoading(false);
       }
-      
-      // Fallback to localStorage
-      const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-      const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
-      
-      // Filter out deleted existing products
-      const availableSampleProducts = sampleProducts.filter(product => !deletedProducts.includes(product.id));
-      
-      const allProducts = [...availableSampleProducts, ...adminProducts];
-      setProducts(allProducts);
-      setFilteredProducts(allProducts);
-      setLoading(false);
     };
     
     loadProducts();

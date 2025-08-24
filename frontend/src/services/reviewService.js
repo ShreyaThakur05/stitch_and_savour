@@ -42,21 +42,8 @@ export const reviewService = {
       console.log('⭐ Review saved to database:', response.data.review._id);
       return response.data;
     } catch (error) {
-      // Only fallback to localStorage if database completely fails
-      console.error('Database unavailable, saving review locally:', error.message);
-      const localReview = {
-        ...reviewData,
-        id: 'local_' + Date.now(),
-        date: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        isLocal: true
-      };
-      
-      const existingReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
-      existingReviews.push(localReview);
-      localStorage.setItem('productReviews', JSON.stringify(existingReviews));
-      
-      return { success: true, review: localReview };
+      console.error('Failed to save review to database:', error.message);
+      throw error;
     }
   },
 
@@ -67,9 +54,8 @@ export const reviewService = {
       console.log('⭐ Product reviews from database:', response.data.reviews.length);
       return response.data.reviews;
     } catch (error) {
-      console.error('Database unavailable, using local reviews:', error.message);
-      return JSON.parse(localStorage.getItem('productReviews') || '[]')
-        .filter(r => r.productId === productId || r.product === productId);
+      console.error('Failed to load product reviews:', error.message);
+      return [];
     }
   },
 
@@ -80,8 +66,8 @@ export const reviewService = {
       console.log('⭐ All reviews from database:', response.data.reviews.length);
       return response.data.reviews;
     } catch (error) {
-      console.error('Database unavailable, using local reviews:', error.message);
-      return JSON.parse(localStorage.getItem('productReviews') || '[]');
+      console.error('Failed to load all reviews:', error.message);
+      return [];
     }
   }
 };

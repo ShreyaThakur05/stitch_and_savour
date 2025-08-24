@@ -1,40 +1,38 @@
+const mongoose = require('mongoose');
 const Review = require('../models/Review');
 const Product = require('../models/Product');
 
 // Add review
 const addReview = async (req, res) => {
   try {
+    // Create a simplified review without requiring Product ObjectId
     const reviewData = {
-      user: req.user?.id,
-      product: req.body.productId || req.body.product,
+      user: req.user?.id || null,
+      productName: req.body.productName || req.body.productId,
       rating: parseInt(req.body.rating) || 5,
       comment: req.body.comment || req.body.review,
       customerName: req.body.customerName || req.user?.name || 'Anonymous',
       customerEmail: req.body.customerEmail || req.user?.email || '',
-      productName: req.body.productName,
-      orderNumber: req.body.orderNumber
+      orderNumber: req.body.orderNumber,
+      verified: true // Mark as verified since it's from order
     };
 
-    // Check if user already reviewed this product (only if user is authenticated)
-    if (req.user?.id) {
-      const existingReview = await Review.findOne({
-        user: req.user.id,
-        product: reviewData.product
-      });
+    // For now, create a simple review document without the Product reference
+    const SimpleReview = mongoose.model('SimpleReview', new mongoose.Schema({
+      user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      productName: { type: String, required: true },
+      rating: { type: Number, required: true, min: 1, max: 5 },
+      comment: { type: String, required: true },
+      customerName: { type: String, required: true },
+      customerEmail: String,
+      orderNumber: String,
+      verified: { type: Boolean, default: true }
+    }, { timestamps: true }));
 
-      if (existingReview) {
-        return res.status(400).json({
-          success: false,
-          message: 'You have already reviewed this product'
-        });
-      }
-    }
-
-    const review = new Review(reviewData);
+    const review = new SimpleReview(reviewData);
     await review.save();
 
-    // Update product rating
-    await updateProductRating(reviewData.product);
+    console.log('✅ Review saved successfully:', review._id);
 
     res.status(201).json({
       success: true,
@@ -45,7 +43,8 @@ const addReview = async (req, res) => {
     console.error('Add review error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add review'
+      message: 'Failed to add review',
+      error: error.message
     });
   }
 };
@@ -99,10 +98,23 @@ const updateProductRating = async (productId) => {
 // Get all reviews (admin)
 const getAllReviews = async (req, res) => {
   try {
-    const reviews = await Review.find()
-      .populate('user', 'name email')
-      .populate('product', 'name')
-      .sort({ createdAt: -1 });
+    // Try to get SimpleReview first, fallback to Review
+    let reviews = [];
+    
+    try {
+      const SimpleReview = mongoose.model('SimpleReview');
+      reviews = await SimpleReview.find()
+        .populate('user', 'name email')
+        .sort({ createdAt: -1 });
+      console.log('⭐ Found SimpleReviews:', reviews.length);
+    } catch (simpleError) {
+      // Fallback to original Review model
+      reviews = await Review.find()
+        .populate('user', 'name email')
+        .populate('product', 'name')
+        .sort({ createdAt: -1 });
+      console.log('⭐ Found Reviews:', reviews.length);
+    }
 
     res.json({ success: true, reviews });
   } catch (error) {

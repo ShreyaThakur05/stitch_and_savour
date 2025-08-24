@@ -3,24 +3,40 @@ const User = require('../models/User');
 
 const auth = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const authHeader = req.header('Authorization');
     
-    if (!token) {
-      return res.status(401).json({ message: 'No token provided' });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No valid token provided', code: 'NO_TOKEN' });
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    if (!token || token === 'null' || token === 'undefined') {
+      return res.status(401).json({ message: 'Invalid token format', code: 'INVALID_TOKEN' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    const user = await User.findById(decoded.userId);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    } catch (jwtError) {
+      if (jwtError.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token expired', code: 'TOKEN_EXPIRED' });
+      }
+      return res.status(401).json({ message: 'Invalid token', code: 'INVALID_TOKEN' });
+    }
+    
+    const user = await User.findById(decoded.userId).select('-password');
     
     if (!user) {
-      return res.status(401).json({ message: 'Invalid token' });
+      return res.status(401).json({ message: 'User not found', code: 'USER_NOT_FOUND' });
     }
 
     req.userId = user._id;
     req.user = user;
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
+    console.error('Auth middleware error:', error);
+    res.status(401).json({ message: 'Authentication failed', code: 'AUTH_ERROR' });
   }
 };
 

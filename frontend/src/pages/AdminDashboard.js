@@ -76,9 +76,8 @@ const AdminDashboard = () => {
       console.error('Failed to load inventory from API:', error);
     }
     
-    // Fallback to localStorage
-    const savedInventory = JSON.parse(localStorage.getItem('inventory') || '[]');
-    setInventory(savedInventory);
+    // If API fails, show empty inventory
+    setInventory([]);
   };
 
   const loadDashboardData = async () => {
@@ -124,8 +123,8 @@ const AdminDashboard = () => {
         contacts = data.success ? data.contacts : [];
         console.log('📧 Admin Dashboard - Contacts from database:', contacts.length);
       } catch (error) {
-        console.warn('Database unavailable for contacts, using localStorage:', error);
-        contacts = JSON.parse(localStorage.getItem('contactMessages') || '[]');
+        console.error('Failed to load contacts from database:', error);
+        contacts = [];
       }
       
       // Load reviews from database first, fallback to localStorage
@@ -140,14 +139,14 @@ const AdminDashboard = () => {
         allReviews = reviewsData.success ? reviewsData.reviews : [];
         console.log('⭐ Admin Dashboard - Reviews from database:', allReviews.length);
       } catch (error) {
-        console.warn('Database unavailable for reviews, using localStorage:', error);
-        allReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
+        console.error('Failed to load reviews from database:', error);
+        allReviews = [];
       }
       
       // Load products from database first, fallback to localStorage
       let allProducts = [];
       try {
-        const productsResponse = await fetch(`${config.API_URL}/products`, {
+        const productsResponse = await fetch(`${config.API_URL}/admin-products`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -156,29 +155,8 @@ const AdminDashboard = () => {
         allProducts = productsData.success ? productsData.products : [];
         console.log('🛍️ Admin Dashboard - Products from database:', allProducts.length);
       } catch (error) {
-        console.warn('Database unavailable for products, using localStorage:', error);
-        const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-        const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
-        
-        // Sample products from ProductsPage
-        const sampleProducts = [
-          { id: 1, name: 'Boho Chic Granny Square Crochet Top', category: 'crochet', price: 1299 },
-          { id: 2, name: 'Classic Striped V-Neck Crochet Vest', category: 'crochet', price: 1199 },
-          { id: 3, name: 'Minimalist Pink Crochet Tank Top', category: 'crochet', price: 999 },
-          { id: 4, name: 'Serene Blue & Pink Pooja Mat', category: 'crochet', price: 449 },
-          { id: 5, name: 'Festive Multicolor Pooja Mat', category: 'crochet', price: 499 },
-          { id: 6, name: 'Homestyle Poha Chivda', category: 'food', price: 25, pricePerKg: 480 },
-          { id: 7, name: 'Sweet & Flaky Shakarpara', category: 'food', price: 25, pricePerKg: 480 },
-          { id: 8, name: 'Crispy & Savory Namak Pare', category: 'food', price: 25, pricePerKg: 480 },
-          { id: 9, name: 'Spicy Mixture Namkeen', category: 'food', price: 25, pricePerKg: 500 },
-          { id: 10, name: 'Classic Salty Mathri', category: 'food', price: 25, pricePerKg: 480 },
-          { id: 11, name: 'Baked Jeera Biscuits', category: 'food', price: 25, pricePerKg: 480 },
-          { id: 12, name: 'Homemade Gujiya', category: 'food', price: 150, weightOptions: ['6 pieces', '12 pieces', '24 pieces'] }
-        ];
-        
-        // Filter out deleted existing products and combine with admin products
-        const availableSampleProducts = sampleProducts.filter(product => !deletedProducts.includes(product.id));
-        allProducts = [...availableSampleProducts, ...adminProducts];
+        console.error('Failed to load products from database:', error);
+        allProducts = [];
       }
       
       setDashboardData({ orders: allOrders, products: allProducts, reviews: allReviews, customers, contacts });
@@ -186,43 +164,9 @@ const AdminDashboard = () => {
       setExpenses(savedExpenses);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      // Complete fallback to localStorage
-      const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      const allReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
-      const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-      const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
-      const savedExpenses = JSON.parse(localStorage.getItem('productExpenses') || '{}');
-      
-      const sampleProducts = [
-        { id: 1, name: 'Boho Chic Granny Square Crochet Top', category: 'crochet', price: 1299 },
-        { id: 2, name: 'Classic Striped V-Neck Crochet Vest', category: 'crochet', price: 1199 },
-        { id: 3, name: 'Minimalist Pink Crochet Tank Top', category: 'crochet', price: 999 },
-        { id: 4, name: 'Serene Blue & Pink Pooja Mat', category: 'crochet', price: 449 },
-        { id: 5, name: 'Festive Multicolor Pooja Mat', category: 'crochet', price: 499 },
-        { id: 6, name: 'Homestyle Poha Chivda', category: 'food', price: 25, pricePerKg: 480 },
-        { id: 7, name: 'Sweet & Flaky Shakarpara', category: 'food', price: 25, pricePerKg: 480 },
-        { id: 8, name: 'Crispy & Savory Namak Pare', category: 'food', price: 25, pricePerKg: 480 },
-        { id: 9, name: 'Spicy Mixture Namkeen', category: 'food', price: 25, pricePerKg: 500 },
-        { id: 10, name: 'Classic Salty Mathri', category: 'food', price: 25, pricePerKg: 480 },
-        { id: 11, name: 'Baked Jeera Biscuits', category: 'food', price: 25, pricePerKg: 480 },
-        { id: 12, name: 'Homemade Gujiya', category: 'food', price: 150, weightOptions: ['6 pieces', '12 pieces', '24 pieces'] }
-      ];
-      
-      const availableSampleProducts = sampleProducts.filter(product => !deletedProducts.includes(product.id));
-      const allProducts = [...availableSampleProducts, ...adminProducts];
-      
-      const customers = [...new Map(allOrders.map(order => 
-        [order.customerName, { 
-          name: order.customerName, 
-          phone: order.phone, 
-          email: order.email || order.customerEmail || 'N/A',
-          orders: allOrders.filter(o => o.customerName === order.customerName).length 
-        }]
-      )).values()];
-      
-      const localContacts = JSON.parse(localStorage.getItem('contactMessages') || '[]');
-      setDashboardData({ orders: allOrders, products: allProducts, reviews: allReviews, customers, contacts: localContacts });
-      setExpenses(savedExpenses);
+      // If database fails completely, show empty data
+      setDashboardData({ orders: [], products: [], reviews: [], customers: [], contacts: [] });
+      setExpenses({});
     }
   };
 
@@ -257,25 +201,31 @@ const AdminDashboard = () => {
         return;
       }
     } catch (error) {
-      console.error('API update failed:', error);
+      console.error('Failed to update order status:', error);
+      showToast('Failed to update order status. Please try again.', 'error');
     }
-    
-    // Fallback to localStorage update
-    const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-    const updatedOrders = allOrders.map(order => 
-      (order.orderNumber === orderId || order._id === orderId) ? { ...order, status: newStatus } : order
-    );
-    localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
-    loadDashboardData();
-    showToast(`Order updated to ${newStatus}`, 'success');
   };
 
-  const deleteOrder = (orderNumber) => {
-    const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-    const filteredOrders = allOrders.filter(order => order.orderNumber !== orderNumber);
-    localStorage.setItem('userOrders', JSON.stringify(filteredOrders));
-    loadDashboardData();
-    showToast('Order deleted successfully', 'success');
+  const deleteOrder = async (orderNumber) => {
+    try {
+      const response = await fetch(`${config.API_URL}/orders/${orderNumber}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        loadDashboardData();
+        showToast('Order deleted successfully', 'success');
+      } else {
+        showToast('Failed to delete order', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+      showToast('Failed to delete order. Please try again.', 'error');
+    }
     setDeleteConfirm({ show: false, type: '', id: '', name: '' });
   };
 
@@ -299,7 +249,7 @@ const AdminDashboard = () => {
     
     try {
       // Try to save to backend first
-      const response = await fetch(`${config.API_URL}/products`, {
+      const response = await fetch(`${config.API_URL}/admin-products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -316,20 +266,9 @@ const AdminDashboard = () => {
         throw new Error(data.error || 'Failed to add product');
       }
     } catch (error) {
-      console.warn('Database unavailable, saving product locally:', error);
-      // Fallback to localStorage
-      const allProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-      
-      const product = {
-        _id: Date.now().toString(),
-        id: Date.now(),
-        ...productData,
-        createdAt: new Date().toISOString()
-      };
-      
-      allProducts.push(product);
-      localStorage.setItem('adminProducts', JSON.stringify(allProducts));
-      showToast('Product added locally!', 'success');
+      console.error('Failed to save product to database:', error);
+      showToast('Failed to add product. Please check your connection.', 'error');
+      return;
     }
     
     setNewProduct({ 
@@ -372,71 +311,81 @@ const AdminDashboard = () => {
         throw new Error(data.error || 'Failed to add inventory item');
       }
     } catch (error) {
-      console.error('API failed, using localStorage:', error);
-      // Fallback to localStorage
-      const newItem = {
-        id: Date.now(),
-        ...newInventoryItem,
-        quantity: parseFloat(newInventoryItem.quantity),
-        minStock: parseFloat(newInventoryItem.minStock) || 0,
-        cost: parseFloat(newInventoryItem.cost) || 0,
-        createdAt: new Date().toISOString()
-      };
-      
-      const updatedInventory = [...inventory, newItem];
-      setInventory(updatedInventory);
-      localStorage.setItem('inventory', JSON.stringify(updatedInventory));
-      showToast('Inventory item added locally!', 'success');
+      console.error('Failed to add inventory item:', error);
+      showToast('Failed to add inventory item. Please try again.', 'error');
     }
     
     setNewInventoryItem({ name: '', quantity: '', unit: '', minStock: '', cost: '' });
     setShowAddInventory(false);
   };
 
-  const updateInventoryQuantity = (itemId, change) => {
-    const updatedInventory = inventory.map(item => {
-      if (item.id === itemId) {
-        const newQuantity = Math.max(0, item.quantity + change);
-        return { ...item, quantity: newQuantity };
+  const updateInventoryQuantity = async (itemId, change) => {
+    try {
+      const response = await fetch(`${config.API_URL}/inventory/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ quantityChange: change })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        loadInventory();
+        showToast('Inventory updated', 'success');
+      } else {
+        showToast('Failed to update inventory', 'error');
       }
-      return item;
-    });
-    setInventory(updatedInventory);
-    localStorage.setItem('inventory', JSON.stringify(updatedInventory));
-    showToast(`Inventory updated`, 'success');
+    } catch (error) {
+      console.error('Failed to update inventory:', error);
+      showToast('Failed to update inventory. Please try again.', 'error');
+    }
   };
 
-  const deleteProduct = (productId) => {
-    // Check if it's an admin-added product or existing product
-    const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-    const isAdminProduct = adminProducts.some(p => p.id === productId);
-    
-    if (isAdminProduct) {
-      // Remove admin-added product
-      const filteredProducts = adminProducts.filter(product => product.id !== productId);
-      localStorage.setItem('adminProducts', JSON.stringify(filteredProducts));
+  const deleteProduct = async (productId) => {
+    try {
+      const response = await fetch(`${config.API_URL}/admin-products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
-      // Also remove from main products list
-      const mainProducts = JSON.parse(localStorage.getItem('products') || '[]');
-      const filteredMainProducts = mainProducts.filter(product => product.id !== productId);
-      localStorage.setItem('products', JSON.stringify(filteredMainProducts));
-    } else {
-      // For existing products, add to deleted list
-      const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
-      deletedProducts.push(productId);
-      localStorage.setItem('deletedProducts', JSON.stringify(deletedProducts));
+      const data = await response.json();
+      if (data.success) {
+        loadDashboardData();
+        showToast('Product deleted successfully', 'success');
+      } else {
+        showToast('Failed to delete product', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      showToast('Failed to delete product. Please try again.', 'error');
     }
-    
-    loadDashboardData();
-    showToast('Product deleted successfully', 'success');
     setDeleteConfirm({ show: false, type: '', id: '', name: '' });
   };
 
-  const deleteInventoryItem = (itemId) => {
-    const updatedInventory = inventory.filter(item => item.id !== itemId);
-    setInventory(updatedInventory);
-    localStorage.setItem('inventory', JSON.stringify(updatedInventory));
-    showToast('Inventory item deleted successfully', 'success');
+  const deleteInventoryItem = async (itemId) => {
+    try {
+      const response = await fetch(`${config.API_URL}/inventory/${itemId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        loadInventory();
+        showToast('Inventory item deleted successfully', 'success');
+      } else {
+        showToast('Failed to delete inventory item', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to delete inventory item:', error);
+      showToast('Failed to delete inventory item. Please try again.', 'error');
+    }
     setDeleteConfirm({ show: false, type: '', id: '', name: '' });
   };
 
@@ -2018,22 +1967,7 @@ const AdminDashboard = () => {
                                     }
                                   } catch (error) {
                                     console.error('Reply error:', error);
-                                    // Fallback: Update localStorage
-                                    try {
-                                      const localContacts = JSON.parse(localStorage.getItem('contactMessages') || '[]');
-                                      const updatedContacts = localContacts.map(msg => 
-                                        msg.id === contact._id || msg.id === contact.id ? 
-                                        { ...msg, adminReply: replyText, status: 'replied', repliedAt: new Date().toISOString() } : 
-                                        msg
-                                      );
-                                      localStorage.setItem('contactMessages', JSON.stringify(updatedContacts));
-                                      showToast('Reply saved successfully!', 'success');
-                                      setReplyText('');
-                                      setSelectedContact(null);
-                                      loadDashboardData();
-                                    } catch (fallbackError) {
-                                      showToast('Failed to send reply', 'error');
-                                    }
+                                    showToast('Failed to send reply. Please try again.', 'error');
                                   }
                                 }}
                                 className="btn btn-primary btn-sm"

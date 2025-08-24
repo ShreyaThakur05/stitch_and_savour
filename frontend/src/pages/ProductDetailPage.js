@@ -309,7 +309,7 @@ const ProductDetailPage = () => {
       // If not found in sample products, check database products
       if (!productData) {
         try {
-          const response = await fetch(`${config.API_URL}/products/${id}`);
+          const response = await fetch(`${config.API_URL}/admin-products/${id}`);
           const data = await response.json();
           if (data.success) {
             productData = data.product;
@@ -319,9 +319,8 @@ const ProductDetailPage = () => {
             productData = adminProducts.find(p => p.id.toString() === id || p._id.toString() === id);
           }
         } catch (error) {
-          console.warn('Database unavailable, checking localStorage:', error);
-          const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-          productData = adminProducts.find(p => p.id.toString() === id || p._id.toString() === id);
+          console.error('Database unavailable:', error);
+          productData = null;
         }
       }
       
@@ -348,19 +347,8 @@ const ProductDetailPage = () => {
             throw new Error('API failed');
           }
         } catch (error) {
-          console.warn('Loading reviews from localStorage fallback:', error);
-          const allReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
-          const productReviews = allReviews.filter(review => 
-            review.productName === productData.name
-          ).map(review => ({
-            _id: review.id,
-            user: { name: review.customerName },
-            rating: review.rating,
-            comment: review.review,
-            createdAt: review.date,
-            verified: true
-          }));
-          setReviews(productReviews);
+          console.error('Failed to load reviews from database:', error);
+          setReviews([]);
         }
       }
       setLoading(false);

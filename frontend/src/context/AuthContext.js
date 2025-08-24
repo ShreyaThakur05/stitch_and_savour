@@ -18,50 +18,91 @@ export const AuthProvider = ({ children }) => {
 
   // All authentication now handled by backend API
 
-  // Load user from localStorage on mount
+  // Validate token and load user on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('stitch_savour_user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-      } catch (error) {
-        console.error('Error loading user from localStorage:', error);
+    const validateAndLoadUser = async () => {
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('stitch_savour_user');
+      
+      if (token && savedUser) {
+        try {
+          // Validate token by fetching current user from API
+          const response = await authService.getCurrentUser();
+          if (response.user) {
+            setUser(response.user);
+            // Update localStorage with fresh user data
+            localStorage.setItem('stitch_savour_user', JSON.stringify(response.user));
+          } else {
+            // Token invalid, clear everything
+            localStorage.removeItem('token');
+            localStorage.removeItem('stitch_savour_user');
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Token validation failed:', error);
+          // Token expired or invalid, clear everything
+          localStorage.removeItem('token');
+          localStorage.removeItem('stitch_savour_user');
+          setUser(null);
+        }
+      } else if (savedUser) {
+        // User data exists but no token, clear stale data
         localStorage.removeItem('stitch_savour_user');
+        setUser(null);
       }
-    }
-    setLoading(false);
+      
+      setLoading(false);
+    };
+    
+    validateAndLoadUser();
   }, []);
 
   const login = async (email, password) => {
     try {
       const response = await authService.login({ email, password });
-      if (response.token) {
+      if (response.token && response.user) {
+        // Store token and user data
         localStorage.setItem('token', response.token);
-        setUser(response.user);
         localStorage.setItem('stitch_savour_user', JSON.stringify(response.user));
-        return true;
+        setUser(response.user);
+        
+        console.log('✅ Login successful for:', response.user.email);
+        return { success: true };
       }
-      return false;
+      return { success: false, error: 'Invalid response from server' };
     } catch (error) {
-      console.error('Login error:', error);
-      return false;
+      console.error('❌ Login error:', error.message);
+      
+      // Clear any stale data
+      localStorage.removeItem('token');
+      localStorage.removeItem('stitch_savour_user');
+      setUser(null);
+      
+      return { success: false, error: error.message || 'Login failed' };
     }
   };
 
   const signup = async (userData) => {
     try {
       const response = await authService.register(userData);
-      if (response.token) {
+      if (response.token && response.user) {
         localStorage.setItem('token', response.token);
-        setUser(response.user);
         localStorage.setItem('stitch_savour_user', JSON.stringify(response.user));
-        return true;
+        setUser(response.user);
+        
+        console.log('✅ Signup successful for:', response.user.email);
+        return { success: true };
       }
-      return false;
+      return { success: false, error: 'Invalid response from server' };
     } catch (error) {
-      console.error('Signup error:', error);
-      return false;
+      console.error('❌ Signup error:', error.message);
+      
+      // Clear any stale data
+      localStorage.removeItem('token');
+      localStorage.removeItem('stitch_savour_user');
+      setUser(null);
+      
+      return { success: false, error: error.message || 'Signup failed' };
     }
   };
 

@@ -12,42 +12,15 @@ const api = axios.create({
 });
 
 export const contactService = {
-  // Submit contact message - database first approach
+  // Submit contact message - database only
   submitMessage: async (messageData) => {
     try {
-      // Try to save to backend first
       const response = await api.post('/contact/submit', messageData);
       console.log('📧 Contact message saved to database:', response.data.message._id);
-      
-      // Only save to localStorage as backup reference
-      const existingMessages = JSON.parse(localStorage.getItem('contactMessages') || '[]');
-      existingMessages.push({
-        ...messageData,
-        _id: response.data.message._id,
-        id: response.data.message._id,
-        createdAt: response.data.message.createdAt,
-        status: 'sent'
-      });
-      localStorage.setItem('contactMessages', JSON.stringify(existingMessages));
-      
       return response.data;
     } catch (error) {
-      // Fallback to localStorage if backend fails
-      console.warn('Backend unavailable, saving message locally:', error.message);
-      const localMessage = {
-        ...messageData,
-        _id: 'local_' + Date.now(),
-        id: 'local_' + Date.now(),
-        createdAt: new Date().toISOString(),
-        status: 'pending',
-        isLocal: true
-      };
-      
-      const existingMessages = JSON.parse(localStorage.getItem('contactMessages') || '[]');
-      existingMessages.push(localMessage);
-      localStorage.setItem('contactMessages', JSON.stringify(existingMessages));
-      
-      return { success: true, message: localMessage };
+      console.error('Failed to save contact message:', error.message);
+      throw error;
     }
   },
 
@@ -55,15 +28,10 @@ export const contactService = {
   getUserMessages: async () => {
     try {
       const response = await api.get('/contact/user');
-      
-      // Merge with local messages
-      const localMessages = JSON.parse(localStorage.getItem('contactMessages') || '[]')
-        .filter(m => m.isLocal);
-      
-      return [...response.data.messages, ...localMessages];
+      return response.data.messages;
     } catch (error) {
-      console.warn('Backend unavailable, using local messages:', error.message);
-      return JSON.parse(localStorage.getItem('contactMessages') || '[]');
+      console.error('Failed to load contact messages:', error.message);
+      return [];
     }
   }
 };

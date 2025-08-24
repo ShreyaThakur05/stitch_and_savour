@@ -38,8 +38,8 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         showToast('Login successful!', 'success');
         // Check if there's a redirect URL
         const redirectUrl = localStorage.getItem('redirectAfterLogin');
@@ -56,8 +56,8 @@ const LoginPage = () => {
           navigate('/dashboard');
         }
       } else {
-        setError('Invalid email or password. Please check your credentials and try again.');
-        showToast('Invalid email or password', 'error');
+        setError(result.error || 'Invalid email or password. Please check your credentials and try again.');
+        showToast(result.error || 'Invalid email or password', 'error');
       }
     } catch (error) {
       setError('Login failed. Please try again.');
