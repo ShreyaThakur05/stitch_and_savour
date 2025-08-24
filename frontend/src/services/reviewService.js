@@ -31,12 +31,12 @@ export const reviewService = {
       // Always try database first
       const response = await api.post('/reviews', {
         productId: reviewData.productId,
+        productName: reviewData.productName || reviewData.productId,
         rating: reviewData.rating,
         comment: reviewData.review || reviewData.comment,
         customerName: reviewData.customerName,
         customerEmail: reviewData.customerEmail,
-        orderNumber: reviewData.orderNumber,
-        productName: reviewData.productName
+        orderNumber: reviewData.orderNumber
       });
       
       console.log('⭐ Review saved to database:', response.data.review._id);
@@ -50,7 +50,7 @@ export const reviewService = {
   // Get reviews for a product - DATABASE FIRST approach
   getProductReviews: async (productId) => {
     try {
-      const response = await api.get(`/reviews/product/${productId}`);
+      const response = await api.get(`/reviews/product/${encodeURIComponent(productId)}`);
       console.log('⭐ Product reviews from database:', response.data.reviews.length);
       return response.data.reviews;
     } catch (error) {

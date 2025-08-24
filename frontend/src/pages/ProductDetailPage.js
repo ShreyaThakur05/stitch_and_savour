@@ -302,21 +302,17 @@ const ProductDetailPage = () => {
 
 
   useEffect(() => {
-    // Load products from both sample data and admin-added products
-    setTimeout(() => {
+    const loadProduct = async () => {
       let productData = sampleProducts[id];
       
       // If not found in sample products, check database products
       if (!productData) {
         try {
-          const response = await fetch(`${config.API_URL}/admin-products/${id}`);
+          const response = await fetch(`${config.API_URL}/admin-products`);
           const data = await response.json();
           if (data.success) {
-            productData = data.product;
-          } else {
-            // Fallback to localStorage
-            const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-            productData = adminProducts.find(p => p.id.toString() === id || p._id.toString() === id);
+            productData = data.products.find(p => p._id.toString() === id);
+            console.log('🛍️ Found admin product:', productData?.name);
           }
         } catch (error) {
           console.error('Database unavailable:', error);
@@ -337,14 +333,20 @@ const ProductDetailPage = () => {
         }
         setCurrentPrice(initialPrice);
         
-        // Load reviews from database first, fallback to localStorage
+        // Load reviews from database using product name
         try {
-          const response = await fetch(`${config.API_URL}/reviews/product/${productData.name}`);
+          const response = await fetch(`${config.API_URL}/reviews/all`);
           const data = await response.json();
           if (data.success) {
-            setReviews(data.reviews);
+            // Filter reviews for this specific product
+            const productReviews = data.reviews.filter(review => 
+              review.productName === productData.name || 
+              review.productId === productData.name
+            );
+            setReviews(productReviews);
+            console.log('⭐ Loaded reviews for product:', productData.name, productReviews.length);
           } else {
-            throw new Error('API failed');
+            setReviews([]);
           }
         } catch (error) {
           console.error('Failed to load reviews from database:', error);
@@ -352,7 +354,9 @@ const ProductDetailPage = () => {
         }
       }
       setLoading(false);
-    }, 1000);
+    };
+    
+    loadProduct();
   }, [id]);
 
   const calculatePrice = (customizations, weight) => {

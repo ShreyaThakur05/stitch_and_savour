@@ -153,7 +153,27 @@ const AdminDashboard = () => {
         });
         const productsData = await productsResponse.json();
         allProducts = productsData.success ? productsData.products : [];
-        console.log('🛍️ Admin Dashboard - Products from database:', allProducts.length);
+        console.log('🛍️ Admin Dashboard - Admin products from database:', allProducts.length);
+        
+        // Also include sample products for complete view
+        const sampleProducts = [
+          { id: 1, name: 'Boho Chic Granny Square Crochet Top', category: 'crochet', price: 1299 },
+          { id: 2, name: 'Classic Striped V-Neck Crochet Vest', category: 'crochet', price: 1199 },
+          { id: 3, name: 'Minimalist Pink Tank Top', category: 'crochet', price: 999 },
+          { id: 4, name: 'Serene Blue & Pink Pooja Mat', category: 'crochet', price: 449 },
+          { id: 5, name: 'Festive Multicolor Pooja Mat', category: 'crochet', price: 499 },
+          { id: 6, name: 'Homestyle Poha Chivda', category: 'food', price: 25 },
+          { id: 7, name: 'Sweet & Flaky Shakarpara', category: 'food', price: 25 },
+          { id: 8, name: 'Crispy & Savory Namak Pare', category: 'food', price: 25 },
+          { id: 9, name: 'Spicy Mixture Namkeen', category: 'food', price: 25 },
+          { id: 10, name: 'Classic Salty Mathri', category: 'food', price: 25 },
+          { id: 11, name: 'Baked Jeera Biscuits', category: 'food', price: 25 },
+          { id: 12, name: 'Homemade Gujiya', category: 'food', price: 150 }
+        ];
+        
+        // Merge admin products with sample products
+        allProducts = [...sampleProducts, ...allProducts];
+        console.log('🛍️ Admin Dashboard - Total products (sample + admin):', allProducts.length);
       } catch (error) {
         console.error('Failed to load products from database:', error);
         allProducts = [];

@@ -217,19 +217,28 @@ const ProductsPage = () => {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        // Try to load products from database first
+        // Load admin products from database
         const response = await fetch(`${config.API_URL}/admin-products`);
         const data = await response.json();
+        
+        let adminProducts = [];
         if (data.success) {
-          setProducts(data.products);
-          setFilteredProducts(data.products);
-          setLoading(false);
-          return;
+          adminProducts = data.products;
+          console.log('🛍️ Loaded admin products from database:', adminProducts.length);
         }
+        
+        // Merge sample products with admin products
+        const allProducts = [...sampleProducts, ...adminProducts];
+        console.log('🛍️ Total products available:', allProducts.length);
+        
+        setProducts(allProducts);
+        setFilteredProducts(allProducts);
+        setLoading(false);
       } catch (error) {
-        console.error('Database unavailable:', error);
-        setProducts([]);
-        setFilteredProducts([]);
+        console.error('Database unavailable, using sample products only:', error);
+        // Fallback to sample products only
+        setProducts(sampleProducts);
+        setFilteredProducts(sampleProducts);
         setLoading(false);
       }
     };
@@ -277,7 +286,7 @@ const ProductsPage = () => {
         cursor: 'pointer',
         position: 'relative'
       }}
-      onClick={() => navigate(`/product/${product.id || product._id}`)}
+      onClick={() => navigate(`/product/${product._id || product.id}`)}
     >
       <div style={{ position: 'relative' }}>
         <img

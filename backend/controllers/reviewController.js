@@ -54,14 +54,32 @@ const getProductReviews = async (req, res) => {
   try {
     const { productId } = req.params;
     
-    const reviews = await Review.find({ 
-      $or: [
-        { product: productId },
-        { productId: productId }
-      ]
-    })
-      .populate('user', 'name')
-      .sort({ createdAt: -1 });
+    // Try SimpleReview first, then fallback to Review
+    let reviews = [];
+    
+    try {
+      const SimpleReview = mongoose.model('SimpleReview');
+      reviews = await SimpleReview.find({ 
+        $or: [
+          { productName: productId },
+          { productId: productId }
+        ]
+      })
+        .populate('user', 'name')
+        .sort({ createdAt: -1 });
+      console.log('⭐ Found SimpleReviews for product:', productId, reviews.length);
+    } catch (simpleError) {
+      // Fallback to original Review model
+      reviews = await Review.find({ 
+        $or: [
+          { product: productId },
+          { productId: productId }
+        ]
+      })
+        .populate('user', 'name')
+        .sort({ createdAt: -1 });
+      console.log('⭐ Found Reviews for product:', productId, reviews.length);
+    }
 
     res.json({ success: true, reviews });
   } catch (error) {

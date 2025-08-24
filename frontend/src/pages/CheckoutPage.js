@@ -307,7 +307,13 @@ const CheckoutPage = () => {
                   try {
                     const userEmail = user?.email;
                     const userOrdersKey = userEmail ? `userOrders_${userEmail}` : 'userOrders';
-                    const userOrders = JSON.parse(localStorage.getItem(userOrdersKey) || '[]');
+                    let userOrders = [];
+                    try {
+                      userOrders = JSON.parse(localStorage.getItem(userOrdersKey) || '[]');
+                    } catch (error) {
+                      console.error('Error parsing user orders:', error);
+                      userOrders = [];
+                    }
                     const lastOrder = userOrders.slice(-1)[0];
                     
                     if (lastOrder) {

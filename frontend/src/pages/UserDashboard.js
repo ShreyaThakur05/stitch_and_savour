@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
 import orderService from '../services/orderService';
 import reviewService from '../services/reviewService';
+import { config } from '../config/config';
 import { 
   Package, 
   ShoppingBag, 
@@ -162,7 +163,7 @@ const UserDashboard = () => {
       
       try {
         // Database-only approach
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/orders`, {
+        const response = await fetch(`${config.API_URL}/orders`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
