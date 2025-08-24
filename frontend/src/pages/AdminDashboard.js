@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../context/ToastContext';
 import { exportOrdersToExcel } from '../utils/excelExport';
+import { config } from '../config/config';
 import { 
   Package, Users, TrendingUp, DollarSign, Download, Search, 
   Filter, Plus, Edit, Trash2, Calendar, BarChart3,
@@ -61,7 +62,7 @@ const AdminDashboard = () => {
 
   const loadInventory = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/inventory`, {
+      const response = await fetch(`${config.API_URL}/inventory`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -83,7 +84,7 @@ const AdminDashboard = () => {
   const loadDashboardData = async () => {
     try {
       // Load orders from API ONLY - no localStorage mixing
-      const ordersResponse = await fetch(`${process.env.REACT_APP_API_URL}/orders/all`, {
+      const ordersResponse = await fetch(`${config.API_URL}/orders/all`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -93,30 +94,7 @@ const AdminDashboard = () => {
       
       console.log('📊 Admin Dashboard - Orders from database:', allOrders.length);
       
-      const allReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
-      const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-      const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
       const savedExpenses = JSON.parse(localStorage.getItem('productExpenses') || '{}');
-      
-      // Sample products from ProductsPage
-      const sampleProducts = [
-        { id: 1, name: 'Boho Chic Granny Square Crochet Top', category: 'crochet', price: 1299 },
-        { id: 2, name: 'Classic Striped V-Neck Crochet Vest', category: 'crochet', price: 1199 },
-        { id: 3, name: 'Minimalist Pink Crochet Tank Top', category: 'crochet', price: 999 },
-        { id: 4, name: 'Serene Blue & Pink Pooja Mat', category: 'crochet', price: 449 },
-        { id: 5, name: 'Festive Multicolor Pooja Mat', category: 'crochet', price: 499 },
-        { id: 6, name: 'Homestyle Poha Chivda', category: 'food', price: 25, pricePerKg: 480 },
-        { id: 7, name: 'Sweet & Flaky Shakarpara', category: 'food', price: 25, pricePerKg: 480 },
-        { id: 8, name: 'Crispy & Savory Namak Pare', category: 'food', price: 25, pricePerKg: 480 },
-        { id: 9, name: 'Spicy Mixture Namkeen', category: 'food', price: 25, pricePerKg: 500 },
-        { id: 10, name: 'Classic Salty Mathri', category: 'food', price: 25, pricePerKg: 480 },
-        { id: 11, name: 'Baked Jeera Biscuits', category: 'food', price: 25, pricePerKg: 480 },
-        { id: 12, name: 'Homemade Gujiya', category: 'food', price: 150, weightOptions: ['6 pieces', '12 pieces', '24 pieces'] }
-      ];
-      
-      // Filter out deleted existing products and combine with admin products
-      const availableSampleProducts = sampleProducts.filter(product => !deletedProducts.includes(product.id));
-      const allProducts = [...availableSampleProducts, ...adminProducts];
       
       // Get unique customers from database orders only
       const customers = [...new Map(allOrders.map(order => {
@@ -134,23 +112,76 @@ const AdminDashboard = () => {
         }];
       })).values()];
       
-      // Load contacts from API or localStorage fallback
+      // Load contacts from database first, fallback to localStorage
+      let contacts = [];
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/contact/all`, {
+        const response = await fetch(`${config.API_URL}/contact/all`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
         const data = await response.json();
-        const contacts = data.success ? data.contacts : [];
-        
-        setDashboardData({ orders: allOrders, products: allProducts, reviews: allReviews, customers, contacts });
+        contacts = data.success ? data.contacts : [];
+        console.log('📧 Admin Dashboard - Contacts from database:', contacts.length);
       } catch (error) {
-        console.error('Error loading contacts:', error);
-        // Fallback to localStorage
-        const localContacts = JSON.parse(localStorage.getItem('contactMessages') || '[]');
-        setDashboardData({ orders: allOrders, products: allProducts, reviews: allReviews, customers, contacts: localContacts });
+        console.warn('Database unavailable for contacts, using localStorage:', error);
+        contacts = JSON.parse(localStorage.getItem('contactMessages') || '[]');
       }
+      
+      // Load reviews from database first, fallback to localStorage
+      let allReviews = [];
+      try {
+        const reviewsResponse = await fetch(`${config.API_URL}/reviews/all`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const reviewsData = await reviewsResponse.json();
+        allReviews = reviewsData.success ? reviewsData.reviews : [];
+        console.log('⭐ Admin Dashboard - Reviews from database:', allReviews.length);
+      } catch (error) {
+        console.warn('Database unavailable for reviews, using localStorage:', error);
+        allReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
+      }
+      
+      // Load products from database first, fallback to localStorage
+      let allProducts = [];
+      try {
+        const productsResponse = await fetch(`${config.API_URL}/products`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const productsData = await productsResponse.json();
+        allProducts = productsData.success ? productsData.products : [];
+        console.log('🛍️ Admin Dashboard - Products from database:', allProducts.length);
+      } catch (error) {
+        console.warn('Database unavailable for products, using localStorage:', error);
+        const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
+        const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
+        
+        // Sample products from ProductsPage
+        const sampleProducts = [
+          { id: 1, name: 'Boho Chic Granny Square Crochet Top', category: 'crochet', price: 1299 },
+          { id: 2, name: 'Classic Striped V-Neck Crochet Vest', category: 'crochet', price: 1199 },
+          { id: 3, name: 'Minimalist Pink Crochet Tank Top', category: 'crochet', price: 999 },
+          { id: 4, name: 'Serene Blue & Pink Pooja Mat', category: 'crochet', price: 449 },
+          { id: 5, name: 'Festive Multicolor Pooja Mat', category: 'crochet', price: 499 },
+          { id: 6, name: 'Homestyle Poha Chivda', category: 'food', price: 25, pricePerKg: 480 },
+          { id: 7, name: 'Sweet & Flaky Shakarpara', category: 'food', price: 25, pricePerKg: 480 },
+          { id: 8, name: 'Crispy & Savory Namak Pare', category: 'food', price: 25, pricePerKg: 480 },
+          { id: 9, name: 'Spicy Mixture Namkeen', category: 'food', price: 25, pricePerKg: 500 },
+          { id: 10, name: 'Classic Salty Mathri', category: 'food', price: 25, pricePerKg: 480 },
+          { id: 11, name: 'Baked Jeera Biscuits', category: 'food', price: 25, pricePerKg: 480 },
+          { id: 12, name: 'Homemade Gujiya', category: 'food', price: 150, weightOptions: ['6 pieces', '12 pieces', '24 pieces'] }
+        ];
+        
+        // Filter out deleted existing products and combine with admin products
+        const availableSampleProducts = sampleProducts.filter(product => !deletedProducts.includes(product.id));
+        allProducts = [...availableSampleProducts, ...adminProducts];
+      }
+      
+      setDashboardData({ orders: allOrders, products: allProducts, reviews: allReviews, customers, contacts });
       
       setExpenses(savedExpenses);
     } catch (error) {
@@ -210,7 +241,7 @@ const AdminDashboard = () => {
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       // Try to update via API first
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/orders/${orderId}/status`, {
+      const response = await fetch(`${config.API_URL}/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -254,40 +285,45 @@ const AdminDashboard = () => {
       return;
     }
     
+    const productData = {
+      ...newProduct,
+      price: parseFloat(newProduct.price),
+      deliveryTime: parseInt(newProduct.deliveryTime) || (newProduct.category === 'crochet' ? 14 : 2),
+      ingredients: newProduct.ingredients ? newProduct.ingredients.split(',').map(i => i.trim()) : [],
+      allergens: newProduct.allergens ? newProduct.allergens.split(',').map(a => a.trim()) : [],
+      weightOptions: newProduct.weightOptions ? newProduct.weightOptions.split(',').map(w => w.trim()) : [],
+      images: [newProduct.image || `/images/products/${newProduct.category}-${newProduct.name.toLowerCase().replace(/\s+/g, '-')}-1.jpg`],
+      rating: 0,
+      reviewCount: 0
+    };
+    
     try {
       // Try to save to backend first
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/admin-products`, {
+      const response = await fetch(`${config.API_URL}/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(newProduct)
+        body: JSON.stringify(productData)
       });
       
       const data = await response.json();
       if (data.success) {
+        console.log('🛍️ Product saved to database:', data.product._id);
         showToast('Product added successfully!', 'success');
       } else {
         throw new Error(data.error || 'Failed to add product');
       }
     } catch (error) {
-      console.error('API failed, using localStorage:', error);
+      console.warn('Database unavailable, saving product locally:', error);
       // Fallback to localStorage
       const allProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
       
       const product = {
         _id: Date.now().toString(),
         id: Date.now(),
-        ...newProduct,
-        price: parseFloat(newProduct.price),
-        deliveryTime: parseInt(newProduct.deliveryTime) || (newProduct.category === 'crochet' ? 14 : 2),
-        ingredients: newProduct.ingredients ? newProduct.ingredients.split(',').map(i => i.trim()) : [],
-        allergens: newProduct.allergens ? newProduct.allergens.split(',').map(a => a.trim()) : [],
-        weightOptions: newProduct.weightOptions ? newProduct.weightOptions.split(',').map(w => w.trim()) : [],
-        images: [newProduct.image || `/images/products/${newProduct.category}-${newProduct.name.toLowerCase().replace(/\s+/g, '-')}-1.jpg`],
-        rating: 0,
-        reviewCount: 0,
+        ...productData,
         createdAt: new Date().toISOString()
       };
       
@@ -314,7 +350,7 @@ const AdminDashboard = () => {
     
     try {
       // Try to save to backend first
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/inventory`, {
+      const response = await fetch(`${config.API_URL}/inventory`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1962,7 +1998,7 @@ const AdminDashboard = () => {
                                   }
                                   
                                   try {
-                                    const response = await fetch(`${process.env.REACT_APP_API_URL}/contact/reply/${contact._id}`, {
+                                    const response = await fetch(`${config.API_URL}/contact/reply/${contact._id}`, {
                                       method: 'PUT',
                                       headers: {
                                         'Content-Type': 'application/json',

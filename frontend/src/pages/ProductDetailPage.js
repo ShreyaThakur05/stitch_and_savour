@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
+import { config } from '../config/config';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -305,10 +306,23 @@ const ProductDetailPage = () => {
     setTimeout(() => {
       let productData = sampleProducts[id];
       
-      // If not found in sample products, check admin products
+      // If not found in sample products, check database products
       if (!productData) {
-        const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-        productData = adminProducts.find(p => p.id.toString() === id || p._id.toString() === id);
+        try {
+          const response = await fetch(`${config.API_URL}/products/${id}`);
+          const data = await response.json();
+          if (data.success) {
+            productData = data.product;
+          } else {
+            // Fallback to localStorage
+            const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
+            productData = adminProducts.find(p => p.id.toString() === id || p._id.toString() === id);
+          }
+        } catch (error) {
+          console.warn('Database unavailable, checking localStorage:', error);
+          const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
+          productData = adminProducts.find(p => p.id.toString() === id || p._id.toString() === id);
+        }
       }
       
       if (productData) {
@@ -324,19 +338,30 @@ const ProductDetailPage = () => {
         }
         setCurrentPrice(initialPrice);
         
-        // Load real reviews from localStorage
-        const allReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
-        const productReviews = allReviews.filter(review => 
-          review.productName === productData.name
-        ).map(review => ({
-          _id: review.id,
-          user: { name: review.customerName },
-          rating: review.rating,
-          comment: review.review,
-          createdAt: review.date,
-          verified: true
-        }));
-        setReviews(productReviews);
+        // Load reviews from database first, fallback to localStorage
+        try {
+          const response = await fetch(`${config.API_URL}/reviews/product/${productData.name}`);
+          const data = await response.json();
+          if (data.success) {
+            setReviews(data.reviews);
+          } else {
+            throw new Error('API failed');
+          }
+        } catch (error) {
+          console.warn('Loading reviews from localStorage fallback:', error);
+          const allReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
+          const productReviews = allReviews.filter(review => 
+            review.productName === productData.name
+          ).map(review => ({
+            _id: review.id,
+            user: { name: review.customerName },
+            rating: review.rating,
+            comment: review.review,
+            createdAt: review.date,
+            verified: true
+          }));
+          setReviews(productReviews);
+        }
       }
       setLoading(false);
     }, 1000);

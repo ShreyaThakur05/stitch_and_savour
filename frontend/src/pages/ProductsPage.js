@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { Search, Filter, ShoppingCart, Star } from 'lucide-react';
+import { config } from '../config/config';
 
 const ProductsPage = () => {
   const navigate = useNavigate();
@@ -214,17 +215,35 @@ const ProductsPage = () => {
   ];
 
   useEffect(() => {
-    // Load products from localStorage (admin added products) and merge with sample products
-    const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-    const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
+    const loadProducts = async () => {
+      try {
+        // Try to load products from database first
+        const response = await fetch(`${config.API_URL}/products`);
+        const data = await response.json();
+        if (data.success) {
+          setProducts(data.products);
+          setFilteredProducts(data.products);
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.warn('Database unavailable, using localStorage fallback:', error);
+      }
+      
+      // Fallback to localStorage
+      const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
+      const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
+      
+      // Filter out deleted existing products
+      const availableSampleProducts = sampleProducts.filter(product => !deletedProducts.includes(product.id));
+      
+      const allProducts = [...availableSampleProducts, ...adminProducts];
+      setProducts(allProducts);
+      setFilteredProducts(allProducts);
+      setLoading(false);
+    };
     
-    // Filter out deleted existing products
-    const availableSampleProducts = sampleProducts.filter(product => !deletedProducts.includes(product.id));
-    
-    const allProducts = [...availableSampleProducts, ...adminProducts];
-    setProducts(allProducts);
-    setFilteredProducts(allProducts);
-    setLoading(false);
+    loadProducts();
   }, []);
 
   useEffect(() => {

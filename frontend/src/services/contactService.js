@@ -12,16 +12,18 @@ const api = axios.create({
 });
 
 export const contactService = {
-  // Submit contact message - save to both backend and localStorage
+  // Submit contact message - database first approach
   submitMessage: async (messageData) => {
     try {
       // Try to save to backend first
       const response = await api.post('/contact/submit', messageData);
+      console.log('📧 Contact message saved to database:', response.data.message._id);
       
-      // Also save to localStorage for user reference
+      // Only save to localStorage as backup reference
       const existingMessages = JSON.parse(localStorage.getItem('contactMessages') || '[]');
       existingMessages.push({
         ...messageData,
+        _id: response.data.message._id,
         id: response.data.message._id,
         createdAt: response.data.message.createdAt,
         status: 'sent'
@@ -34,6 +36,7 @@ export const contactService = {
       console.warn('Backend unavailable, saving message locally:', error.message);
       const localMessage = {
         ...messageData,
+        _id: 'local_' + Date.now(),
         id: 'local_' + Date.now(),
         createdAt: new Date().toISOString(),
         status: 'pending',
