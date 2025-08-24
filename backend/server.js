@@ -21,6 +21,8 @@ const contactRoutes = require('./routes/contact');
 const reviewRoutes = require('./routes/reviews');
 const wishlistRoutes = require('./routes/wishlist');
 const cartRoutes = require('./routes/cart');
+const adminProductRoutes = require('./routes/adminProducts');
+const inventoryRoutes = require('./routes/inventory');
 
 const app = express();
 
@@ -73,6 +75,8 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/admin-products', adminProductRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

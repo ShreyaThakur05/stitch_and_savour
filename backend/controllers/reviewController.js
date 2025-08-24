@@ -4,32 +4,37 @@ const Product = require('../models/Product');
 // Add review
 const addReview = async (req, res) => {
   try {
-    const { productId, rating, comment } = req.body;
+    const reviewData = {
+      user: req.user?.id,
+      product: req.body.productId || req.body.product,
+      rating: parseInt(req.body.rating) || 5,
+      comment: req.body.comment || req.body.review,
+      customerName: req.body.customerName || req.user?.name || 'Anonymous',
+      customerEmail: req.body.customerEmail || req.user?.email || '',
+      productName: req.body.productName,
+      orderNumber: req.body.orderNumber
+    };
 
-    // Check if user already reviewed this product
-    const existingReview = await Review.findOne({
-      user: req.user.id,
-      product: productId
-    });
-
-    if (existingReview) {
-      return res.status(400).json({
-        success: false,
-        message: 'You have already reviewed this product'
+    // Check if user already reviewed this product (only if user is authenticated)
+    if (req.user?.id) {
+      const existingReview = await Review.findOne({
+        user: req.user.id,
+        product: reviewData.product
       });
+
+      if (existingReview) {
+        return res.status(400).json({
+          success: false,
+          message: 'You have already reviewed this product'
+        });
+      }
     }
 
-    const review = new Review({
-      user: req.user.id,
-      product: productId,
-      rating,
-      comment
-    });
-
+    const review = new Review(reviewData);
     await review.save();
 
     // Update product rating
-    await updateProductRating(productId);
+    await updateProductRating(reviewData.product);
 
     res.status(201).json({
       success: true,
@@ -50,7 +55,12 @@ const getProductReviews = async (req, res) => {
   try {
     const { productId } = req.params;
     
-    const reviews = await Review.find({ product: productId })
+    const reviews = await Review.find({ 
+      $or: [
+        { product: productId },
+        { productId: productId }
+      ]
+    })
       .populate('user', 'name')
       .sort({ createdAt: -1 });
 
@@ -126,5 +136,6 @@ module.exports = {
   addReview,
   getProductReviews,
   getAllReviews,
-  deleteReview
+  deleteReview,
+  createReview: addReview // Alias for compatibility
 };

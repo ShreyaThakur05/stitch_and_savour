@@ -13,9 +13,11 @@ router.get('/product/:productId', getProductReviews);
 
 // User routes
 router.post('/add', auth, addReview);
+router.post('/', auth, addReview);
 
 // Admin routes
-router.get('/all', auth, adminAuth, getAllReviews);
+router.get('/all', auth, getAllReviews);
+router.get('/', auth, getAllReviews);
 router.delete('/:id', auth, adminAuth, deleteReview);
 
 module.exports = router;
