@@ -108,17 +108,18 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/stitch-sa
   // Create admin user if it doesn't exist
   const User = require('./models/User');
   try {
-    const existingAdmin = await User.findOne({ email: process.env.ADMIN_EMAIL });
+    const existingAdmin = await User.findOne({ email: 'admin@stitchandsavour.com' });
     if (!existingAdmin) {
       const admin = new User({
         name: 'Admin',
-        email: process.env.ADMIN_EMAIL,
-        password: process.env.ADMIN_PASSWORD,
+        email: 'admin@stitchandsavour.com',
+        password: 'admin123',
         phone: '+919970944685',
+        address: 'Alkasa Society, Mohammadwadi, Pune - 411060',
         role: 'admin'
       });
       await admin.save();
-      console.log('Admin user created:', process.env.ADMIN_EMAIL);
+      console.log('Admin user created: admin@stitchandsavour.com');
     }
   } catch (error) {
     console.error('Error creating admin user:', error.message);
