@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const smsService = require('../utils/smsService');
@@ -7,18 +8,39 @@ const createOrder = async (req, res) => {
   try {
     console.log('Order received:', req.body);
     
+    // Find user if authenticated
+    let userId = null;
+    if (req.headers.authorization) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const token = req.headers.authorization.replace('Bearer ', '');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        userId = decoded.userId;
+      } catch (error) {
+        console.log('Token verification failed, creating guest order');
+      }
+    }
+    
     // Create order in database
     const orderData = {
-      orderNumber: 'SS' + Date.now(),
+      orderNumber: req.body.orderId || 'SS' + Date.now(),
+      user: userId,
       subtotal: req.body.subtotal || req.body.total || 0,
       total: req.body.total || 0,
-      deliveryCharges: req.body.deliveryCharges || 0,
+      deliveryCharges: req.body.deliveryOption === 'home' ? 25 : 0,
       items: (req.body.items || []).map(item => ({
+        // Create a dummy product ID for now
+        product: new mongoose.Types.ObjectId(),
         name: item.name,
-        price: item.price,
+        price: item.finalPrice || item.price,
         quantity: item.quantity,
-        customization: item.customization || {},
-        subtotal: item.price * item.quantity
+        customization: {
+          selectedWeight: item.selectedWeight,
+          threadType: item.customizations?.['thread-type'],
+          size: item.customizations?.size,
+          specialInstructions: item.customizations?.instructions
+        },
+        subtotal: (item.finalPrice || item.price) * item.quantity
       })),
       paymentMethod: req.body.paymentMethod || 'cod',
       deliveryAddress: {
