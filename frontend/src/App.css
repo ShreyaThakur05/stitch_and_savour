@@ -430,13 +430,95 @@ input:focus, textarea:focus, select:focus {
   transform: scale(1.05);
 }
 
-/* Responsive Design */
+/* Enhanced Mobile Responsive Design */
 @media (max-width: 768px) {
-  .container { padding: 0 1rem; }
-  .btn { padding: 0.625rem 1.25rem; font-size: 0.8rem; }
-  h1 { font-size: 2rem !important; }
-  h2 { font-size: 1.5rem !important; }
-  .card-body { padding: 1rem; }
+  .container { 
+    padding: 0 1rem; 
+    max-width: 100%;
+  }
+  
+  .btn { 
+    padding: 0.875rem 1.5rem; 
+    font-size: 1rem;
+    min-height: 48px;
+    min-width: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .btn-sm {
+    min-height: 44px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+  }
+  
+  .btn-lg {
+    min-height: 52px;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+  }
+  
+  h1 { 
+    font-size: 2.2rem !important; 
+    line-height: 1.2 !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  h2 { 
+    font-size: 1.8rem !important; 
+    line-height: 1.3 !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  h3 {
+    font-size: 1.4rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .card-body { 
+    padding: 1.25rem; 
+  }
+  
+  /* Mobile navigation improvements */
+  nav {
+    padding: 0.75rem 0 !important;
+  }
+  
+  /* Mobile form improvements */
+  input, textarea, select {
+    min-height: 48px !important;
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    padding: 0.875rem 1rem !important;
+  }
+  
+  /* Mobile grid improvements */
+  .grid-mobile {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+  
+  /* Mobile spacing improvements */
+  section {
+    padding: 3rem 0 !important;
+  }
+  
+  /* Mobile text improvements */
+  p {
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+  }
+  
+  /* Mobile floating elements */
+  .floating-elements {
+    bottom: 80px !important;
+    right: 16px !important;
+  }
+  
+  /* Mobile modal improvements */
+  .modal-content {
+    margin: 1rem !important;
+    max-width: calc(100% - 2rem) !important;
+  }
 }
 
 /* Scrollbar */
@@ -454,6 +536,18 @@ input:focus, textarea:focus, select:focus {
 .text-secondary { color: var(--text-secondary); }
 .text-muted { color: var(--text-muted); }
 .text-strong { color: var(--text-strong); }
+
+/* Mobile utility classes */
+@media (max-width: 768px) {
+  .mobile-hidden { display: none !important; }
+  .mobile-visible { display: block !important; }
+  .mobile-center { text-align: center !important; }
+  .mobile-full-width { width: 100% !important; }
+  .mobile-no-padding { padding: 0 !important; }
+  .mobile-small-padding { padding: 0.5rem !important; }
+  .mobile-medium-padding { padding: 1rem !important; }
+  .mobile-large-padding { padding: 1.5rem !important; }
+}
 
 .feature-icon {
   color: #374151;

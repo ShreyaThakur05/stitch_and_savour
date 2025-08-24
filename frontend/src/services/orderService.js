@@ -25,42 +25,66 @@ api.interceptors.request.use(
 );
 
 export const orderService = {
-  // Create order - save to both backend and localStorage
+  // Get all orders for admin
+  getAllOrders: async () => {
+    try {
+      const response = await api.get('/orders/all');
+      if (response.data.success) {
+        return response.data.orders;
+      }
+    } catch (error) {
+      console.warn('Backend unavailable, using local orders:', error.message);
+    }
+    
+    // Fallback to localStorage
+    return JSON.parse(localStorage.getItem('userOrders') || '[]');
+  },
+  // Create order - save to backend with localStorage fallback
   createOrder: async (orderData) => {
     try {
       // Try to save to backend first
       const response = await api.post('/orders', orderData);
       
-      // Save to user-specific localStorage key
-      const userEmail = orderData.customerEmail || orderData.email;
-      const userSpecificKey = `userOrders_${userEmail}`;
-      const existingOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
-      existingOrders.push({
-        ...orderData,
-        orderId: response.data.order._id,
-        createdAt: response.data.order.createdAt,
-        status: response.data.order.status
-      });
-      localStorage.setItem(userSpecificKey, JSON.stringify(existingOrders));
-      
-      return response.data;
+      if (response.data.success) {
+        // Also save to localStorage for offline access
+        const userEmail = orderData.customerEmail || orderData.email;
+        if (userEmail) {
+          const userSpecificKey = `userOrders_${userEmail}`;
+          const existingOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
+          existingOrders.push({
+            ...response.data.order,
+            isLocal: false
+          });
+          localStorage.setItem(userSpecificKey, JSON.stringify(existingOrders));
+        }
+        
+        return response.data;
+      }
     } catch (error) {
       // Fallback to localStorage if backend fails
       console.warn('Backend unavailable, saving order locally:', error.message);
       const orderId = 'local_' + Date.now();
       const localOrder = {
         ...orderData,
-        orderId,
+        _id: orderId,
+        orderNumber: 'SS' + Date.now(),
         createdAt: new Date().toISOString(),
         status: 'pending',
         isLocal: true
       };
       
       const userEmail = orderData.customerEmail || orderData.email;
-      const userSpecificKey = `userOrders_${userEmail}`;
-      const existingOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
-      existingOrders.push(localOrder);
-      localStorage.setItem(userSpecificKey, JSON.stringify(existingOrders));
+      if (userEmail) {
+        const userSpecificKey = `userOrders_${userEmail}`;
+        const existingOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
+        existingOrders.push(localOrder);
+        localStorage.setItem(userSpecificKey, JSON.stringify(existingOrders));
+      }
+      
+      // Also save to general localStorage for admin access
+      const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      allOrders.push(localOrder);
+      localStorage.setItem('userOrders', JSON.stringify(allOrders));
       
       return { success: true, order: localOrder };
     }
@@ -69,20 +93,27 @@ export const orderService = {
   // Get user orders - try backend first, fallback to localStorage
   getUserOrders: async () => {
     try {
-      const response = await api.get('/orders/user');
+      const response = await api.get('/orders');
       
-      // Get user email from token or current user
-      const currentUser = JSON.parse(localStorage.getItem('stitch_savour_user') || '{}');
-      const userSpecificKey = `userOrders_${currentUser.email}`;
-      const localOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
-      const allOrders = [...response.data.orders, ...localOrders.filter(o => o.isLocal)];
-      
-      return allOrders;
+      if (response.data.success) {
+        // Merge with local orders
+        const currentUser = JSON.parse(localStorage.getItem('stitch_savour_user') || '{}');
+        if (currentUser.email) {
+          const userSpecificKey = `userOrders_${currentUser.email}`;
+          const localOrders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
+          const localOnlyOrders = localOrders.filter(o => o.isLocal);
+          return [...response.data.orders, ...localOnlyOrders];
+        }
+        return response.data.orders;
+      }
     } catch (error) {
       console.warn('Backend unavailable, using local orders:', error.message);
       const currentUser = JSON.parse(localStorage.getItem('stitch_savour_user') || '{}');
-      const userSpecificKey = `userOrders_${currentUser.email}`;
-      return JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
+      if (currentUser.email) {
+        const userSpecificKey = `userOrders_${currentUser.email}`;
+        return JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
+      }
+      return JSON.parse(localStorage.getItem('userOrders') || '[]');
     }
   },
 
@@ -91,27 +122,49 @@ export const orderService = {
     try {
       const response = await api.put(`/orders/${orderId}/status`, { status });
       
-      // Update user-specific localStorage
-      const currentUser = JSON.parse(localStorage.getItem('stitch_savour_user') || '{}');
-      const userSpecificKey = `userOrders_${currentUser.email}`;
-      const orders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
-      const orderIndex = orders.findIndex(o => o.orderId === orderId);
-      if (orderIndex > -1) {
-        orders[orderIndex].status = status;
-        localStorage.setItem(userSpecificKey, JSON.stringify(orders));
+      if (response.data.success) {
+        // Update localStorage as well
+        const currentUser = JSON.parse(localStorage.getItem('stitch_savour_user') || '{}');
+        if (currentUser.email) {
+          const userSpecificKey = `userOrders_${currentUser.email}`;
+          const orders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
+          const orderIndex = orders.findIndex(o => o._id === orderId || o.orderNumber === orderId);
+          if (orderIndex > -1) {
+            orders[orderIndex].status = status;
+            localStorage.setItem(userSpecificKey, JSON.stringify(orders));
+          }
+        }
+        
+        // Update general localStorage for admin
+        const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+        const orderIndex = allOrders.findIndex(o => o._id === orderId || o.orderNumber === orderId);
+        if (orderIndex > -1) {
+          allOrders[orderIndex].status = status;
+          localStorage.setItem('userOrders', JSON.stringify(allOrders));
+        }
+        
+        return response.data;
       }
-      
-      return response.data;
     } catch (error) {
       // Update only localStorage if backend fails
       const currentUser = JSON.parse(localStorage.getItem('stitch_savour_user') || '{}');
-      const userSpecificKey = `userOrders_${currentUser.email}`;
-      const orders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
-      const orderIndex = orders.findIndex(o => o.orderId === orderId);
-      if (orderIndex > -1) {
-        orders[orderIndex].status = status;
-        localStorage.setItem(userSpecificKey, JSON.stringify(orders));
+      if (currentUser.email) {
+        const userSpecificKey = `userOrders_${currentUser.email}`;
+        const orders = JSON.parse(localStorage.getItem(userSpecificKey) || '[]');
+        const orderIndex = orders.findIndex(o => o._id === orderId || o.orderNumber === orderId);
+        if (orderIndex > -1) {
+          orders[orderIndex].status = status;
+          localStorage.setItem(userSpecificKey, JSON.stringify(orders));
+        }
       }
+      
+      const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      const orderIndex = allOrders.findIndex(o => o._id === orderId || o.orderNumber === orderId);
+      if (orderIndex > -1) {
+        allOrders[orderIndex].status = status;
+        localStorage.setItem('userOrders', JSON.stringify(allOrders));
+      }
+      
       throw error;
     }
   }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import '../styles/mobile-navbar-hero.css';
 import { 
   Heart, 
   Star,
@@ -131,7 +132,7 @@ const Home = () => {
   return (
     <div>
       {/* Hero Section */}
-      <section style={{ 
+      <section className="hero-section" style={{ 
         minHeight: '100vh', 
         display: 'flex', 
         alignItems: 'center', 
@@ -198,7 +199,7 @@ const Home = () => {
               Stitch & Savour
             </h1>
             
-            <p style={{ 
+            <p className="tagline" style={{ 
               fontSize: '1.4rem', 
               color: 'var(--text-secondary)', 
               marginBottom: '2.5rem',
@@ -209,7 +210,7 @@ const Home = () => {
               <br />straight from our home to your heart ❤️
             </p>
             
-            <div style={{ 
+            <div className="hero-buttons" style={{ 
               display: 'flex', 
               gap: '1.5rem', 
               justifyContent: 'center', 
@@ -235,8 +236,6 @@ const Home = () => {
                 Our Story
               </Link>
             </div>
-
-
           </div>
         </div>
         
@@ -254,7 +253,7 @@ const Home = () => {
       {/* About Sangita Section */}
       <section style={{ padding: '6rem 0', background: 'var(--bg-secondary)' }}>
         <div className="container">
-          <div style={{ 
+          <div className="founder-section" style={{ 
             display: 'grid', 
             gridTemplateColumns: '1fr 1fr', 
             gap: '4rem', 
@@ -262,7 +261,7 @@ const Home = () => {
             maxWidth: '1100px',
             margin: '0 auto'
           }}>
-            <div className="animate-slide-in">
+            <div className="founder-image animate-slide-in">
               <div className="card hover-lift" style={{ padding: '1rem', background: 'var(--bg-primary)' }}>
                 <img
                   src="/images/sangita-photo.jpg"
@@ -279,7 +278,7 @@ const Home = () => {
                 />
               </div>
             </div>
-            <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            <div className="founder-content animate-slide-up" style={{ animationDelay: '0.3s' }}>
               <div style={{ 
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -457,7 +456,7 @@ const Home = () => {
             </p>
           </div>
           
-          <div className="animate-fade-in" style={{ 
+          <div className="animate-fade-in product-categories-grid" style={{ 
             display: 'grid', 
             gridTemplateColumns: '1fr 1fr', 
             gap: '2rem',
@@ -466,7 +465,7 @@ const Home = () => {
             animationDelay: '0.2s'
           }}>
             <div
-              className="card product-card hover-scale animate-stagger-1"
+              className="product-category-card food-category-card card product-card hover-scale animate-stagger-1"
               onClick={() => {
                 if (!user) {
                   localStorage.setItem('redirectAfterLogin', '/products?category=food');
@@ -521,6 +520,7 @@ const Home = () => {
             </div>
             
             <div
+              className="product-category-card crochet-category-card card product-card hover-scale animate-stagger-2"
               onClick={() => {
                 if (!user) {
                   localStorage.setItem('redirectAfterLogin', '/products?category=crochet');
@@ -530,7 +530,6 @@ const Home = () => {
                   window.scrollTo(0, 0);
                 }
               }}
-              className="card product-card hover-scale animate-stagger-2"
               style={{
                 position: 'relative',
                 overflow: 'hidden',
@@ -759,27 +758,22 @@ const Home = () => {
                     ₹{product.price}
                   </div>
                   
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product);
-                      }}
-                      className="btn btn-outline btn-sm"
-                      style={{ flex: 1 }}
-                    >
-                      Add to Cart
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleBuyNow(product);
-                      }}
-                      className="btn btn-primary btn-sm"
-                      style={{ flex: 1 }}
-                    >
-                      Buy Now
-                    </button>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem',
+                    background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
+                    color: 'white',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    borderRadius: '0 0 15px 15px',
+                    margin: '-1rem -1rem 0 -1rem',
+                    marginTop: '0.75rem'
+                  }}>
+                    <span>View Details</span>
+                    <span style={{ fontSize: '1rem' }}>→</span>
                   </div>
                 </div>
               </div>

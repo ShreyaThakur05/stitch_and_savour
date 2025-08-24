@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { ToastProvider } from './context/ToastContext';
 import { useAuth } from './context/AuthContext';
+import { useCart } from './context/CartContext';
+import { ShoppingCart } from 'lucide-react';
 import Chatbot from './components/Chatbot';
 
 // Components
@@ -27,14 +29,13 @@ import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import TermsPage from './pages/TermsPage';
 import RefundPolicyPage from './pages/RefundPolicyPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 // Styles
 import './App.css';
 import './styles/responsive.css';
-import './styles/mobile.css';
-import './styles/mobile-fix.css';
-import './styles/mobile-perfect.css';
-import './styles/mobile-ultimate.css';
+import './styles/mobile-navbar-hero.css';
+import './styles/mobile-enhanced.css';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -44,6 +45,67 @@ const ScrollToTop = () => {
   }, [pathname]);
   
   return null;
+};
+
+const FloatingCart = () => {
+  const navigate = useNavigate();
+  const { cartItems } = useCart();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  if (!isMobile) return null;
+  
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  
+  return (
+    <button
+      onClick={() => navigate('/cart')}
+      style={{
+        position: 'fixed',
+        bottom: '160px',
+        right: '20px',
+        width: '50px',
+        height: '50px',
+        backgroundColor: 'var(--primary-color)',
+        borderRadius: '50%',
+        border: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 4px 16px rgba(217, 70, 239, 0.4)',
+        cursor: 'pointer',
+        zIndex: 1000,
+        transition: 'all 0.3s ease'
+      }}
+    >
+      <ShoppingCart size={20} color="white" />
+      {totalItems > 0 && (
+        <span style={{
+          position: 'absolute',
+          top: '-5px',
+          right: '-5px',
+          backgroundColor: '#ef4444',
+          color: 'white',
+          borderRadius: '50%',
+          width: '20px',
+          height: '20px',
+          fontSize: '0.7rem',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '2px solid white'
+        }}>
+          {totalItems > 99 ? '99+' : totalItems}
+        </span>
+      )}
+    </button>
+  );
 };
 
 const AppContent = () => {
@@ -61,6 +123,7 @@ const AppContent = () => {
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/terms" element={<TermsPage />} />
                   <Route path="/refund-policy" element={<RefundPolicyPage />} />
                   <Route path="/login" element={<LoginPage />} />
@@ -142,7 +205,12 @@ const AppContent = () => {
         </svg>
       </a>
       
-      {user && user.email !== 'admin@stitchandsavour.com' && <Chatbot />}
+      {user && user.email !== 'admin@stitchandsavour.com' && (
+        <>
+          <FloatingCart />
+          <Chatbot />
+        </>
+      )}
     </div>
   );
 };

@@ -1,0 +1,265 @@
+/* Homepage Enhancements - Better Product Cards & No Color Changes */
+
+/* Mobile-Only: Remove all tap highlights and color changes */
+@media screen and (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+  }
+
+  /* Prevent background color changes on click/tap */
+  *:active,
+  *:focus,
+  div:active,
+  div:focus,
+  section:active,
+  section:focus {
+    background-color: inherit !important;
+    color: inherit !important;
+  }
+}
+
+/* Mobile-Only Hero Section Fix */
+@media screen and (max-width: 768px) {
+  .hero-section h1 {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    font-size: 2.2rem !important;
+    line-height: 1.2 !important;
+  }
+}
+
+/* Desktop - Hide mobile enhancements, show original content */
+@media screen and (min-width: 769px) {
+  .product-category-card .card-content {
+    display: none !important;
+  }
+  
+  .theme-toggle-mobile {
+    display: none !important;
+  }
+  
+  .mobile-nav-links {
+    display: none !important;
+  }
+}
+
+/* Enhanced Product Category Cards - Mobile Only */
+@media screen and (max-width: 768px) {
+  .product-categories-section {
+    background: var(--bg-secondary) !important;
+    padding: 6rem 0 !important;
+  }
+}
+
+/* Mobile Product Category Cards */
+@media screen and (max-width: 768px) {
+  
+  /* Product Categories Grid - Single Column on Mobile */
+  .product-categories-grid {
+    display: block !important;
+    gap: 1.5rem !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+  }
+  
+  /* Enhanced Product Category Cards */
+  .product-category-card {
+    position: relative !important;
+    overflow: hidden !important;
+    border-radius: 24px !important;
+    min-height: 280px !important;
+    margin-bottom: 1.5rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12) !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  .product-category-card:active {
+    transform: scale(0.98) !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18) !important;
+  }
+  
+  /* Food Category Card */
+  .food-category-card {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ffcc02 100%) !important;
+    color: white !important;
+  }
+  
+  .food-category-card::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: 
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255,255,255,0.15) 0%, transparent 50%) !important;
+    z-index: 1 !important;
+  }
+  
+  /* Crochet Category Card */
+  .crochet-category-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
+    color: white !important;
+  }
+  
+  .crochet-category-card::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: 
+      radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(255,255,255,0.15) 0%, transparent 50%) !important;
+    z-index: 1 !important;
+  }
+  
+  /* Card Content */
+  .product-category-card .card-content {
+    position: relative !important;
+    z-index: 2 !important;
+    padding: 2rem !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+  
+  /* Decorative Icons */
+  .product-category-card .decorative-icon {
+    position: absolute !important;
+    top: 1.5rem !important;
+    right: 1.5rem !important;
+    font-size: 3rem !important;
+    opacity: 0.3 !important;
+    z-index: 1 !important;
+  }
+  
+  /* Main Icon */
+  .product-category-card .main-icon {
+    font-size: 3.5rem !important;
+    margin-bottom: 1rem !important;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2)) !important;
+  }
+  
+  /* Card Title */
+  .product-category-card .card-title {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    margin-bottom: 0.75rem !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Card Description */
+  .product-category-card .card-description {
+    font-size: 1.1rem !important;
+    opacity: 0.95 !important;
+    margin-bottom: 1.5rem !important;
+    line-height: 1.5 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+  }
+  
+  /* Card Action Button */
+  .product-category-card .card-action {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    background: rgba(255,255,255,0.25) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 25px !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(255,255,255,0.3) !important;
+    transition: all 0.2s ease !important;
+    align-self: flex-start !important;
+  }
+  
+  .product-category-card .card-action:active {
+    background: rgba(255,255,255,0.35) !important;
+    transform: scale(0.98) !important;
+  }
+  
+  /* Floating Elements Animation */
+  .product-category-card .floating-element {
+    position: absolute !important;
+    border-radius: 50% !important;
+    background: rgba(255,255,255,0.1) !important;
+    animation: float 6s ease-in-out infinite !important;
+  }
+  
+  .product-category-card .floating-element:nth-child(1) {
+    width: 60px !important;
+    height: 60px !important;
+    top: 15% !important;
+    left: 10% !important;
+    animation-delay: 0s !important;
+  }
+  
+  .product-category-card .floating-element:nth-child(2) {
+    width: 40px !important;
+    height: 40px !important;
+    top: 60% !important;
+    right: 15% !important;
+    animation-delay: 2s !important;
+  }
+  
+  .product-category-card .floating-element:nth-child(3) {
+    width: 30px !important;
+    height: 30px !important;
+    bottom: 20% !important;
+    left: 20% !important;
+    animation-delay: 4s !important;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    25% { transform: translateY(-10px) rotate(90deg); }
+    50% { transform: translateY(-5px) rotate(180deg); }
+    75% { transform: translateY(-15px) rotate(270deg); }
+  }
+  
+  /* Shimmer Effect */
+  .product-category-card::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,0.2),
+      transparent
+    ) !important;
+    transition: left 0.5s ease !important;
+    z-index: 3 !important;
+  }
+  
+  .product-category-card:active::after {
+    left: 100% !important;
+  }
+}
+
+
+
+/* Mobile-Only: Remove any unwanted color changes globally */
+@media screen and (max-width: 768px) {
+  body *:not(input):not(textarea):not(select) {
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  body *:active:not(input):not(textarea):not(select):not(button):not(a):not([role="button"]) {
+    background-color: inherit !important;
+    color: inherit !important;
+  }
+}

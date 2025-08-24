@@ -26,7 +26,10 @@ import {
   Phone,
   Mail,
   Edit3,
-  Plus
+  Plus,
+  Inbox,
+  RotateCw,
+  CheckSquare
 } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -67,6 +70,22 @@ const UserDashboard = () => {
   useEffect(() => {
     fetchUserData();
     loadProfileData();
+    
+    // Add scroll listener for dashboard tabs
+    const tabsContainer = document.querySelector('.dashboard-tabs');
+    if (tabsContainer) {
+      const handleScroll = () => {
+        const container = document.querySelector('.dashboard-tabs-container');
+        if (container) {
+          container.classList.add('scrolled');
+        }
+      };
+      tabsContainer.addEventListener('scroll', handleScroll, { once: true });
+      
+      return () => {
+        tabsContainer.removeEventListener('scroll', handleScroll);
+      };
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -138,7 +157,31 @@ const UserDashboard = () => {
 
   const fetchUserData = async () => {
     try {
-      const userOrders = await orderService.getUserOrders();
+      // Database-first approach: Try API first, fallback to localStorage only if API fails
+      let userOrders = [];
+      
+      try {
+        // Try to get orders from database
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/orders`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          userOrders = data.orders;
+          console.log('👤 User orders from database:', userOrders.length);
+        } else {
+          throw new Error('API returned unsuccessful response');
+        }
+      } catch (apiError) {
+        console.error('Failed to load orders from API:', apiError);
+        // Fallback to localStorage only if API completely fails
+        userOrders = await orderService.getUserOrders();
+        console.log('👤 User orders from localStorage fallback:', userOrders.length);
+      }
+      
       const formattedOrders = userOrders.map(order => ({
         _id: order.orderId || order._id || order.orderNumber,
         orderNumber: order.orderNumber || order.orderId,
@@ -182,11 +225,49 @@ const UserDashboard = () => {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <User className="w-4 h-4" /> },
     { id: 'orders', label: 'My Orders', icon: <Package className="w-4 h-4" /> },
-    { id: 'profile', label: 'Profile Settings', icon: <Settings className="w-4 h-4" /> },
     { id: 'reviews', label: 'Write Review', icon: <Star className="w-4 h-4" /> },
     { id: 'categories', label: 'Shop Categories', icon: <ShoppingBag className="w-4 h-4" /> },
     { id: 'wishlist', label: 'Wishlist', icon: <Heart className="w-4 h-4" /> }
   ];
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return '#6b7280';
+      case 'received': return '#3b82f6';
+      case 'in-progress': return '#f59e0b';
+      case 'out-for-delivery': return '#f97316';
+      case 'delivered': return '#10b981';
+      case 'cancelled': return '#ef4444';
+      default: return '#6b7280';
+    }
+  };
+
+  const getStatusProgress = (status) => {
+    switch (status) {
+      case 'pending': return 0;
+      case 'received': return 25;
+      case 'in-progress': return 50;
+      case 'out-for-delivery': return 75;
+      case 'delivered': return 100;
+      case 'cancelled': return 0;
+      default: return 0;
+    }
+  };
+
+  const getStatusSteps = () => [
+    { key: 'pending', label: 'Pending', icon: Clock },
+    { key: 'received', label: 'Received', icon: Inbox },
+    { key: 'in-progress', label: 'In Progress', icon: RotateCw },
+    { key: 'out-for-delivery', label: 'Out for Delivery', icon: Truck },
+    { key: 'delivered', label: 'Delivered', icon: CheckSquare }
+  ];
+
+  const isStepCompleted = (currentStatus, stepKey) => {
+    const statusOrder = ['pending', 'received', 'in-progress', 'out-for-delivery', 'delivered'];
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    const stepIndex = statusOrder.indexOf(stepKey);
+    return currentIndex >= stepIndex;
+  };
 
   if (loading) {
     return (
@@ -364,30 +445,287 @@ const UserDashboard = () => {
           {/* Tab Content */}
           <div style={{ padding: '1.5rem' }}>
             {activeTab === 'overview' && (
-              <div className="space-y-6">
-                <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--bg-tertiary)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🛍️</div>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '1rem' }}>Welcome to your dashboard!</h3>
-                  <p style={{ color: 'var(--text-strong)', marginBottom: '2rem', lineHeight: '1.5' }}>
-                    Discover our amazing collection of handmade crochet items and delicious homemade food!
-                  </p>
-                  <button 
-                    onClick={() => navigate('/products')}
-                    style={{
-                      background: 'var(--primary-color)',
-                      color: 'white',
-                      padding: '1rem 2rem',
-                      borderRadius: '12px',
-                      border: 'none',
-                      fontSize: '1.1rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    Start Shopping
-                  </button>
-                </div>
+              <div style={{ maxWidth: '1000px' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '2rem' }}>Recent Orders</h3>
+                
+                {orders.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--bg-tertiary)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🛍️</div>
+                    <h4 style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '1rem' }}>No orders yet!</h4>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.5' }}>
+                      Start shopping to see your orders here.
+                    </p>
+                    <button 
+                      onClick={() => navigate('/products')}
+                      style={{
+                        background: 'var(--primary-color)',
+                        color: 'white',
+                        padding: '1rem 2rem',
+                        borderRadius: '12px',
+                        border: 'none',
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Start Shopping
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {orders.slice(0, 3).map((order) => (
+                      <div key={order._id || order.orderNumber} style={{
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '16px',
+                        padding: '1.5rem',
+                        background: 'var(--bg-secondary)'
+                      }}>
+                        <div style={{ 
+                          background: 'linear-gradient(135deg, var(--primary-color)10, var(--secondary-color)10)',
+                          padding: '1.25rem',
+                          borderRadius: '12px',
+                          border: '1px solid var(--border-color)',
+                          marginBottom: '1.5rem'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                <div style={{
+                                  width: '8px',
+                                  height: '8px',
+                                  borderRadius: '50%',
+                                  background: getStatusColor(order.status)
+                                }} />
+                                <h4 style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '1.2rem', margin: 0 }}>Order #{order.orderNumber}</h4>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Clock size={14} style={{ color: 'var(--text-secondary)' }} />
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.4' }}>
+                                  {new Date(order.createdAt).toLocaleDateString('en-IN', { 
+                                    weekday: 'long', 
+                                    day: 'numeric',
+                                    month: 'long', 
+                                    year: 'numeric'
+                                  })} at {new Date(order.createdAt).toLocaleTimeString('en-IN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                            <span style={{
+                              padding: '0.6rem 1.2rem',
+                              borderRadius: '25px',
+                              fontSize: '0.8rem',
+                              fontWeight: '700',
+                              background: getStatusColor(order.status),
+                              color: 'white',
+                              textTransform: 'capitalize',
+                              whiteSpace: 'nowrap',
+                              boxShadow: `0 2px 8px ${getStatusColor(order.status)}40`
+                            }}>
+                              {order.status.replace('-', ' ')}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Order Items */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <div style={{ 
+                            background: 'var(--bg-tertiary)', 
+                            padding: '1rem', 
+                            borderRadius: '12px',
+                            border: '1px solid var(--border-color)'
+                          }}>
+                            {order.items?.slice(0, 2).map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: idx < Math.min(order.items.length, 2) - 1 ? '0.75rem' : '0' }}>
+                                <img
+                                  src={(() => {
+                                    const name = item.name.toLowerCase();
+                                    if (name.includes('boho')) return '/images/crochet-boho-top.jpg';
+                                    if (name.includes('pink') && name.includes('tank')) return '/images/crochet-pink-tank.jpg';
+                                    if (name.includes('striped') && name.includes('vest')) return '/images/crochet-striped-vest.jpg';
+                                    if (name.includes('pooja') && name.includes('blue')) return '/images/crochet-pooja-mat-blue.jpg';
+                                    if (name.includes('pooja') && name.includes('multicolor')) return '/images/crochet-pooja-mat-multicolor.jpg';
+                                    if (name.includes('gujiya')) return '/images/food-gujiya.jpg';
+                                    if (name.includes('jeera')) return '/images/food-jeera-biscuits.webp';
+                                    if (name.includes('mathri')) return '/images/food-mathri.jpg';
+                                    if (name.includes('mixture')) return '/images/food-mixture.jpg';
+                                    if (name.includes('namak')) return '/images/food-namak-pare.jpg';
+                                    if (name.includes('poha')) return '/images/food-poha-chivda.jpg';
+                                    if (name.includes('shakarpara')) return '/images/food-shakarpara.jpg';
+                                    return '/images/placeholder.jpg';
+                                  })()} 
+                                  alt={item.name}
+                                  style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    objectFit: 'cover',
+                                    borderRadius: '10px',
+                                    border: '2px solid var(--primary-color)',
+                                    boxShadow: '0 3px 8px rgba(0,0,0,0.15)',
+                                    flexShrink: 0
+                                  }}
+                                />
+                                <div style={{
+                                  width: '48px',
+                                  height: '48px',
+                                  borderRadius: '10px',
+                                  background: 'var(--bg-tertiary)',
+                                  border: '2px solid var(--border-color)',
+                                  display: 'none',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '0.7rem',
+                                  color: 'var(--text-secondary)',
+                                  flexShrink: 0
+                                }}>
+                                  No Image
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <h5 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>
+                                    {item.name}
+                                  </h5>
+                                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+                                    Quantity: {item.quantity} | ₹{item.finalPrice || item.price}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                            {order.items?.length > 2 && (
+                              <div style={{ 
+                                marginTop: '0.75rem', 
+                                paddingTop: '0.75rem', 
+                                borderTop: '1px solid var(--border-color)',
+                                textAlign: 'center'
+                              }}>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                  +{order.items.length - 2} more item{order.items.length - 2 > 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Professional Progress Tracker */}
+                        <div style={{ 
+                          background: 'var(--bg-primary)', 
+                          padding: '1rem', 
+                          borderRadius: '12px', 
+                          border: '1px solid var(--border-color)',
+                          marginBottom: '1rem'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                            {/* Progress Line */}
+                            <div style={{
+                              position: 'absolute',
+                              top: '16px',
+                              left: '16px',
+                              right: '16px',
+                              height: '2px',
+                              background: 'var(--border-color)',
+                              borderRadius: '1px',
+                              zIndex: 1
+                            }}>
+                              <div style={{
+                                width: `${getStatusProgress(order.status)}%`,
+                                height: '100%',
+                                background: 'var(--primary-color)',
+                                borderRadius: '1px',
+                                transition: 'width 0.8s ease'
+                              }} />
+                            </div>
+                            
+                            {getStatusSteps().map((step, index) => {
+                              const isCompleted = isStepCompleted(order.status, step.key);
+                              const isCurrent = order.status === step.key;
+                              const IconComponent = step.icon;
+                              
+                              return (
+                                <div key={step.key} style={{ 
+                                  display: 'flex', 
+                                  flexDirection: 'column', 
+                                  alignItems: 'center', 
+                                  flex: 1, 
+                                  position: 'relative', 
+                                  zIndex: 2 
+                                }}>
+                                  <div style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    background: isCompleted ? 'var(--primary-color)' : 'var(--bg-secondary)',
+                                    border: `2px solid ${isCompleted ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: isCompleted ? 'white' : 'var(--text-secondary)',
+                                    marginBottom: '0.5rem',
+                                    transform: isCurrent ? 'scale(1.1)' : 'scale(1)',
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: isCurrent ? '0 0 0 4px rgba(217, 70, 239, 0.2)' : 'none'
+                                  }}>
+                                    {isCompleted ? <CheckCircle size={16} /> : <IconComponent size={16} />}
+                                  </div>
+                                  <span style={{
+                                    fontSize: '0.7rem',
+                                    color: isCompleted ? 'var(--primary-color)' : 'var(--text-secondary)',
+                                    fontWeight: isCompleted ? '600' : '500',
+                                    textAlign: 'center',
+                                    lineHeight: '1.2',
+                                    maxWidth: '60px'
+                                  }}>
+                                    {step.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--primary-color)' }}>
+                            Total: ₹{order.total}
+                          </span>
+                          <button
+                            onClick={() => setActiveTab('orders')}
+                            style={{
+                              padding: '0.5rem 1rem',
+                              background: 'var(--primary-color)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '0.8rem',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {orders.length > 3 && (
+                      <button
+                        onClick={() => setActiveTab('orders')}
+                        style={{
+                          padding: '1rem',
+                          background: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '12px',
+                          color: 'var(--primary-color)',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          textAlign: 'center'
+                        }}
+                      >
+                        View All {orders.length} Orders →
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -421,84 +759,271 @@ const UserDashboard = () => {
                   </div>
                 </div>
                 
-                {orders.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No orders found</h4>
-                    <p className="text-gray-500 dark:text-gray-400 mb-6">
-                      You haven't placed any orders yet. Start shopping to see your orders here.
+                {filteredOrders.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+                    <Package size={64} style={{ color: 'var(--text-secondary)', margin: '0 auto 1rem auto' }} />
+                    <h4 style={{ fontSize: '1.2rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>No orders found</h4>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+                      {searchTerm || statusFilter !== 'all' ? 'No orders match your filters.' : 'You haven\'t placed any orders yet.'}
                     </p>
-                    <a
-                      href="/products"
-                      className="bg-pink-600 text-white px-6 py-3 rounded-lg hover:bg-pink-700 inline-block"
+                    <button
+                      onClick={() => navigate('/products')}
+                      style={{
+                        background: 'var(--primary-color)',
+                        color: 'white',
+                        padding: '0.75rem 2rem',
+                        borderRadius: '12px',
+                        border: 'none',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
                     >
                       Browse Products
-                    </a>
+                    </button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {filteredOrders.map((order) => (
                       <div key={order._id || order.orderNumber} style={{
                         border: '1px solid var(--border-color)',
-                        borderRadius: '12px',
+                        borderRadius: '16px',
                         padding: '1.5rem',
-                        background: 'var(--bg-secondary)',
-                        marginBottom: '1rem'
+                        background: 'var(--bg-secondary)'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                          <div style={{ flex: 1 }}>
-                            <h4 style={{ fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>Order #{order.orderNumber}</h4>
-                            <p style={{ fontSize: '1rem', color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>
-                              {order.items?.length || 0} item(s) - {order.items?.map(item => item.name).join(', ') || 'Order Items'}
-                            </p>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>
-                              Placed on {new Date(order.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
+                        <div style={{ 
+                          background: 'linear-gradient(135deg, var(--primary-color)10, var(--secondary-color)10)',
+                          padding: '1.25rem',
+                          borderRadius: '12px',
+                          border: '1px solid var(--border-color)',
+                          marginBottom: '1.5rem'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                <div style={{
+                                  width: '8px',
+                                  height: '8px',
+                                  borderRadius: '50%',
+                                  background: getStatusColor(order.status)
+                                }} />
+                                <h4 style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '1.2rem', margin: 0 }}>Order #{order.orderNumber}</h4>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Clock size={14} style={{ color: 'var(--text-secondary)' }} />
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.4' }}>
+                                  {new Date(order.createdAt).toLocaleDateString('en-IN', { 
+                                    weekday: 'long', 
+                                    day: 'numeric',
+                                    month: 'long', 
+                                    year: 'numeric'
+                                  })} at {new Date(order.createdAt).toLocaleTimeString('en-IN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                  })}
+                                </p>
+                              </div>
+                            </div>
                             <span style={{
-                              padding: '0.5rem 1rem',
-                              borderRadius: '12px',
+                              padding: '0.6rem 1.2rem',
+                              borderRadius: '25px',
                               fontSize: '0.8rem',
-                              fontWeight: '600',
-                              background: order.status === 'delivered' ? 'var(--success-light)' : 'var(--warning-light)',
-                              color: order.status === 'delivered' ? 'var(--success)' : 'var(--warning)'
+                              fontWeight: '700',
+                              background: getStatusColor(order.status),
+                              color: 'white',
+                              textTransform: 'capitalize',
+                              whiteSpace: 'nowrap',
+                              boxShadow: `0 2px 8px ${getStatusColor(order.status)}40`
                             }}>
-                              {order.status.replace('-', ' ').toUpperCase()}
+                              {order.status.replace('-', ' ')}
                             </span>
                           </div>
                         </div>
                         
-                        <div style={{ borderTop: '1px solid var(--border-color)', marginTop: '1rem', paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-                            <button
-                              onClick={() => {
-                                generateInvoicePDF(order);
-                                showToast('Invoice downloaded successfully!', 'success');
-                              }}
-                              style={{
-                                display: 'flex',
+                        {/* Order Items with Product Images */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          {order.items?.map((item, idx) => (
+                            <div key={idx} style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '1rem', 
+                              marginBottom: '1rem', 
+                              padding: '1rem', 
+                              background: 'var(--bg-tertiary)', 
+                              borderRadius: '12px',
+                              border: '1px solid var(--border-color)'
+                            }}>
+                              <img
+                                src={(() => {
+                                  const name = item.name.toLowerCase();
+                                  if (name.includes('boho')) return '/images/crochet-boho-top.jpg';
+                                  if (name.includes('pink') && name.includes('tank')) return '/images/crochet-pink-tank.jpg';
+                                  if (name.includes('striped') && name.includes('vest')) return '/images/crochet-striped-vest.jpg';
+                                  if (name.includes('pooja') && name.includes('blue')) return '/images/crochet-pooja-mat-blue.jpg';
+                                  if (name.includes('pooja') && name.includes('multicolor')) return '/images/crochet-pooja-mat-multicolor.jpg';
+                                  if (name.includes('gujiya')) return '/images/food-gujiya.jpg';
+                                  if (name.includes('jeera')) return '/images/food-jeera-biscuits.webp';
+                                  if (name.includes('mathri')) return '/images/food-mathri.jpg';
+                                  if (name.includes('mixture')) return '/images/food-mixture.jpg';
+                                  if (name.includes('namak')) return '/images/food-namak-pare.jpg';
+                                  if (name.includes('poha')) return '/images/food-poha-chivda.jpg';
+                                  if (name.includes('shakarpara')) return '/images/food-shakarpara.jpg';
+                                  return '/images/placeholder.jpg';
+                                })()} 
+                                alt={item.name}
+                                style={{
+                                  width: '60px',
+                                  height: '60px',
+                                  objectFit: 'cover',
+                                  borderRadius: '12px',
+                                  border: '2px solid var(--primary-color)',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                  flexShrink: 0
+                                }}
+                              />
+                              <div style={{
+                                width: '60px',
+                                height: '60px',
+                                borderRadius: '12px',
+                                background: 'var(--bg-tertiary)',
+                                border: '2px solid var(--border-color)',
+                                display: 'none',
                                 alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.75rem 1.25rem',
-                                background: 'linear-gradient(135deg, #10b981, #059669)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '10px',
-                                fontSize: '0.85rem',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
-                              }}
-                            >
-                              <Download size={16} />
-                              Download Invoice
-                            </button>
+                                justifyContent: 'center',
+                                fontSize: '0.8rem',
+                                color: 'var(--text-secondary)',
+                                flexShrink: 0
+                              }}>
+                                No Image
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <h5 style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.25rem', fontSize: '1rem' }}>{item.name}</h5>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                                  Quantity: {item.quantity} | Price: ₹{item.finalPrice || item.price}
+                                </p>
+                                <p style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--primary-color)' }}>
+                                  Subtotal: ₹{(item.finalPrice || item.price) * item.quantity}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Professional Order Tracking */}
+                        <div style={{ 
+                          marginBottom: '1.5rem', 
+                          background: 'var(--bg-primary)', 
+                          padding: '1.5rem', 
+                          borderRadius: '16px', 
+                          border: '1px solid var(--border-color)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                        }}>
+                          <h4 style={{ 
+                            fontSize: '1rem', 
+                            fontWeight: '600', 
+                            color: 'var(--text-primary)', 
+                            marginBottom: '1.5rem',
+                            textAlign: 'center'
+                          }}>
+                            Order Tracking
+                          </h4>
+                          
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                            {/* Progress Line */}
+                            <div style={{
+                              position: 'absolute',
+                              top: '20px',
+                              left: '20px',
+                              right: '20px',
+                              height: '2px',
+                              background: 'var(--border-color)',
+                              borderRadius: '1px',
+                              zIndex: 1
+                            }}>
+                              <div style={{
+                                width: `${getStatusProgress(order.status)}%`,
+                                height: '100%',
+                                background: 'linear-gradient(90deg, var(--primary-color), #ec4899)',
+                                borderRadius: '1px',
+                                transition: 'width 1s ease',
+                                boxShadow: '0 0 8px rgba(217, 70, 239, 0.3)'
+                              }} />
+                            </div>
+                            
+                            {getStatusSteps().map((step, index) => {
+                              const isCompleted = isStepCompleted(order.status, step.key);
+                              const isCurrent = order.status === step.key;
+                              const IconComponent = step.icon;
+                              
+                              return (
+                                <div key={step.key} style={{ 
+                                  display: 'flex', 
+                                  flexDirection: 'column', 
+                                  alignItems: 'center', 
+                                  flex: 1, 
+                                  position: 'relative', 
+                                  zIndex: 2 
+                                }}>
+                                  <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '50%',
+                                    background: isCompleted ? 'var(--primary-color)' : 'var(--bg-secondary)',
+                                    border: `3px solid ${isCompleted ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: isCompleted ? 'white' : 'var(--text-secondary)',
+                                    marginBottom: '0.75rem',
+                                    transform: isCurrent ? 'scale(1.1)' : 'scale(1)',
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: isCurrent ? '0 0 0 6px rgba(217, 70, 239, 0.15)' : isCompleted ? '0 4px 12px rgba(217, 70, 239, 0.2)' : 'none'
+                                  }}>
+                                    {isCompleted ? <CheckCircle size={18} /> : <IconComponent size={18} />}
+                                  </div>
+                                  <span style={{
+                                    fontSize: '0.75rem',
+                                    color: isCompleted ? 'var(--primary-color)' : 'var(--text-secondary)',
+                                    fontWeight: isCompleted ? '600' : '500',
+                                    textAlign: 'center',
+                                    lineHeight: '1.2',
+                                    maxWidth: '70px'
+                                  }}>
+                                    {step.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
-                          <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--primary-color)' }}>
+                        </div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                          <span style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--primary-color)' }}>
                             Total: ₹{order.total}
-                          </div>
+                          </span>
+                          <button
+                            onClick={() => {
+                              generateInvoicePDF(order);
+                              showToast('Invoice downloaded successfully!', 'success');
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.75rem 1.25rem',
+                              background: 'linear-gradient(135deg, #10b981, #059669)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '12px',
+                              fontSize: '0.85rem',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <Download size={16} />
+                            Download Invoice
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -507,7 +1032,7 @@ const UserDashboard = () => {
               </div>
             )}
 
-            {activeTab === 'profile' && (
+            {activeTab === 'profile-removed' && (
               <div style={{ maxWidth: '600px' }}>
                 <div style={{
                   display: 'flex',

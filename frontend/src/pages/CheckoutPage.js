@@ -31,6 +31,22 @@ const CheckoutPage = () => {
     state: ''
   });
   
+  // Load profile data from localStorage
+  useEffect(() => {
+    if (user?.email) {
+      const profileKey = `userProfile_${user.email}`;
+      const savedProfile = JSON.parse(localStorage.getItem(profileKey) || '{}');
+      
+      setDeliveryInfo(prev => ({
+        ...prev,
+        name: savedProfile.name || user.name || '',
+        phone: savedProfile.phone || user.phone || '',
+        email: savedProfile.email || user.email || '',
+        address: savedProfile.address || user.address || ''
+      }));
+    }
+  }, [user]);
+  
   const [deliveryOption, setDeliveryOption] = useState('home');
 
   const calculateDeliveryTime = () => {
@@ -59,7 +75,9 @@ const CheckoutPage = () => {
     if (deliveryOption === 'home') {
       required.push('address', 'pincode', 'city', 'state');
     }
-    return required.every(field => deliveryInfo[field].trim() !== '');
+    const isValid = required.every(field => deliveryInfo[field] && deliveryInfo[field].trim() !== '');
+    console.log('🔍 Form validation:', { required, deliveryInfo, isValid });
+    return isValid;
   };
 
   const sendOrderConfirmation = async (orderData) => {
@@ -108,12 +126,20 @@ const CheckoutPage = () => {
   };
 
   const handlePlaceOrder = async () => {
+    console.log('🔥 Button clicked! Validation:', validateForm(), 'Loading:', loading);
+    console.log('📋 Form data:', deliveryInfo);
+    console.log('💳 Payment method:', paymentMethod);
+    
     if (!validateForm()) {
+      console.log('❌ Form validation failed');
       alert('Please fill in all required fields');
       return;
     }
 
+    console.log('✅ Form validation passed, proceeding...');
+    
     if (paymentMethod === 'qr') {
+      console.log('💳 Processing QR payment...');
       const orderId = generateOrderId();
       setCurrentOrderId(orderId);
       
@@ -133,6 +159,7 @@ const CheckoutPage = () => {
       return;
     }
 
+    console.log('💰 Processing COD payment...');
     // Place order for COD
     await processOrder();
   };
@@ -242,9 +269,9 @@ const CheckoutPage = () => {
     return (
       <div style={{ padding: '2rem 0', minHeight: '60vh' }}>
         <div className="container">
-          <div style={{ 
+          <div className="order-success-container" style={{ 
             textAlign: 'center',
-            padding: '4rem 2rem',
+            padding: '2rem',
             background: 'var(--bg-secondary)',
             borderRadius: '16px',
             border: '1px solid var(--border-color)',
@@ -254,20 +281,21 @@ const CheckoutPage = () => {
             <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎉</div>
             <h2 style={{ 
               color: 'var(--success)',
-              marginBottom: '1rem'
+              marginBottom: '1rem',
+              fontSize: '1.8rem'
             }}>
               Order Placed Successfully!
             </h2>
             <p style={{ 
               color: 'var(--text-secondary)',
               marginBottom: '2rem',
-              fontSize: '1.1rem',
+              fontSize: '1rem',
               lineHeight: '1.6'
             }}>
               Thank you for your order! We've sent a confirmation message to your WhatsApp/SMS. 
               You'll receive updates about your order status.
             </p>
-            <div style={{ 
+            <div className="order-success-actions" style={{ 
               display: 'flex',
               gap: '1rem',
               justifyContent: 'center',
@@ -276,15 +304,27 @@ const CheckoutPage = () => {
             }}>
               <button
                 onClick={() => {
-                  const lastOrder = JSON.parse(localStorage.getItem('userOrders') || '[]').slice(-1)[0];
-                  if (lastOrder) {
-                    const { generateInvoicePDF } = require('../utils/pdfGenerator');
-                    generateInvoicePDF(lastOrder);
+                  try {
+                    const userEmail = user?.email;
+                    const userOrdersKey = userEmail ? `userOrders_${userEmail}` : 'userOrders';
+                    const userOrders = JSON.parse(localStorage.getItem(userOrdersKey) || '[]');
+                    const lastOrder = userOrders.slice(-1)[0];
+                    
+                    if (lastOrder) {
+                      const { generateInvoicePDF } = require('../utils/pdfGenerator');
+                      generateInvoicePDF(lastOrder);
+                    } else {
+                      alert('No order found to generate invoice');
+                    }
+                  } catch (error) {
+                    console.error('Error generating invoice:', error);
+                    alert('Error generating invoice. Please try again.');
                   }
                 }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '0.5rem',
                   padding: '0.75rem 1.5rem',
                   background: 'linear-gradient(135deg, #10b981, #059669)',
@@ -294,20 +334,54 @@ const CheckoutPage = () => {
                   fontSize: '0.9rem',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  minHeight: '44px',
+                  flex: '1'
                 }}
               >
                 📄 Download Invoice
               </button>
               <button
                 onClick={() => navigate('/dashboard')}
-                className="btn btn-primary"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  background: 'var(--primary-color)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  minHeight: '44px',
+                  flex: '1'
+                }}
               >
                 View Orders
               </button>
               <button
                 onClick={() => navigate('/products')}
-                className="btn btn-outline"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  background: 'transparent',
+                  color: 'var(--primary-color)',
+                  border: '2px solid var(--primary-color)',
+                  borderRadius: '12px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  minHeight: '44px',
+                  flex: '1'
+                }}
               >
                 Continue Shopping
               </button>
@@ -1226,7 +1300,12 @@ const CheckoutPage = () => {
 
               {/* Place Order Button */}
               <button
-                onClick={handlePlaceOrder}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🖱️ Button click event triggered');
+                  handlePlaceOrder();
+                }}
                 disabled={loading || !validateForm()}
                 style={{
                   width: '100%',
@@ -1243,7 +1322,10 @@ const CheckoutPage = () => {
                   justifyContent: 'center',
                   gap: '0.5rem',
                   transition: 'all 0.2s ease',
-                  opacity: (validateForm() && !loading) ? 1 : 0.6
+                  opacity: (validateForm() && !loading) ? 1 : 0.6,
+                  pointerEvents: (validateForm() && !loading) ? 'auto' : 'none',
+                  touchAction: 'manipulation',
+                  WebkitTapHighlightColor: 'rgba(0,0,0,0.1)'
                 }}
               >
                 {loading ? (

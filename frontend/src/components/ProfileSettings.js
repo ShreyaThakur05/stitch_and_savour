@@ -1,27 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Phone, Calendar, MapPin, Plus, Trash2, Package } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
+import { User, Mail, Phone, Calendar, MapPin, Plus, Trash2 } from 'lucide-react';
 
 const ProfileSettings = ({ onClose }) => {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    gender: user?.gender || '',
-    dob: user?.dob || '',
-    city: user?.city || '',
-    addresses: user?.addresses || []
+    gender: '',
+    dob: '',
+    city: '',
+    addresses: []
   });
   const [newAddress, setNewAddress] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Mock past orders
-  const pastOrders = [
-    { id: 'ORD001', date: '2024-01-15', total: 450, status: 'Delivered', items: 'Poha Chivda, Mathri' },
-    { id: 'ORD002', date: '2024-01-10', total: 1299, status: 'Delivered', items: 'Boho Chic Granny Square Top' },
-    { id: 'ORD003', date: '2024-01-05', total: 85, status: 'Delivered', items: 'Namak Pare, Jeera Biscuits' }
-  ];
+  // Load saved profile data
+  useEffect(() => {
+    if (user?.email) {
+      const profileKey = `userProfile_${user.email}`;
+      const savedProfile = JSON.parse(localStorage.getItem(profileKey) || '{}');
+      
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || savedProfile.phone || '', // Prioritize user.phone from signup
+        gender: savedProfile.gender || '',
+        dob: savedProfile.dob || '',
+        city: savedProfile.city || '',
+        addresses: savedProfile.addresses || []
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -52,15 +65,25 @@ const ProfileSettings = ({ onClose }) => {
     setLoading(true);
     
     try {
-      const success = await updateProfile(formData);
-      if (success) {
-        alert('Profile updated successfully!');
+      if (user?.email) {
+        const profileKey = `userProfile_${user.email}`;
+        const profileData = {
+          ...formData,
+          updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem(profileKey, JSON.stringify(profileData));
+        
+        // Update user context with new phone number
+        if (user.phone !== formData.phone) {
+          const updatedUser = { ...user, phone: formData.phone };
+          localStorage.setItem('stitch_savour_user', JSON.stringify(updatedUser));
+        }
+        
+        showToast('Profile updated successfully!', 'success');
         onClose();
-      } else {
-        alert('Failed to update profile. Please try again.');
       }
     } catch (error) {
-      alert('Error updating profile. Please try again.');
+      showToast('Error updating profile. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -237,7 +260,7 @@ const ProfileSettings = ({ onClose }) => {
               </div>
             </div>
 
-            {/* Addresses & Orders */}
+            {/* Saved Addresses */}
             <div>
               <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Saved Addresses</h3>
               
@@ -271,67 +294,47 @@ const ProfileSettings = ({ onClose }) => {
                   </button>
                 </div>
 
-                {formData.addresses.map((address, index) => (
-                  <div key={index} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.75rem',
+                {formData.addresses.length === 0 ? (
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '2rem',
+                    color: 'var(--text-secondary)',
                     backgroundColor: 'var(--bg-secondary)',
                     borderRadius: '8px',
-                    marginBottom: '0.5rem'
+                    border: '1px dashed var(--border-color)'
                   }}>
-                    <span style={{ flex: 1, fontSize: '0.9rem' }}>{address}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeAddress(index)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--error)',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <MapPin size={32} style={{ margin: '0 auto 0.5rem auto', opacity: 0.5 }} />
+                    <p>No saved addresses yet</p>
                   </div>
-                ))}
-              </div>
-
-              <h3 style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Past Orders</h3>
-              <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {pastOrders.map((order) => (
-                  <div key={order.id} style={{
-                    padding: '1rem',
-                    backgroundColor: 'var(--bg-secondary)',
-                    borderRadius: '8px',
-                    marginBottom: '0.5rem',
-                    border: '1px solid var(--border-color)'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Package className="w-4 h-4" />
-                        <span style={{ fontWeight: '600' }}>{order.id}</span>
-                      </div>
-                      <span style={{
-                        padding: '0.25rem 0.5rem',
-                        backgroundColor: 'var(--success-light)',
-                        color: 'var(--success)',
-                        borderRadius: '4px',
-                        fontSize: '0.8rem'
-                      }}>
-                        {order.status}
-                      </span>
+                ) : (
+                  formData.addresses.map((address, index) => (
+                    <div key={index} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.75rem',
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderRadius: '8px',
+                      marginBottom: '0.5rem',
+                      border: '1px solid var(--border-color)'
+                    }}>
+                      <span style={{ flex: 1, fontSize: '0.9rem' }}>{address}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeAddress(index)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          padding: '0.25rem'
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                      {order.items}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                      <span>{new Date(order.date).toLocaleDateString()}</span>
-                      <span style={{ fontWeight: '600' }}>₹{order.total}</span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>

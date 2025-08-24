@@ -108,43 +108,44 @@ const Chatbot = () => {
     <>
       {/* Chat Button */}
       <button
+        className="chatbot-toggle"
         onClick={() => setIsOpen(true)}
         style={{
           position: 'fixed',
-          bottom: '100px',
+          bottom: '90px',
           right: '20px',
-          width: '60px',
-          height: '60px',
-          backgroundColor: 'var(--primary-color)',
+          width: '50px',
+          height: '50px',
+          backgroundColor: '#6366f1',
           borderRadius: '50%',
           border: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 4px 12px rgba(217, 70, 239, 0.4)',
+          boxShadow: '0 4px 16px rgba(99, 102, 241, 0.4)',
           cursor: 'pointer',
           zIndex: 1000,
           transition: 'all 0.3s ease'
         }}
-        onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
-        onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
       >
-        <MessageCircle size={24} color="white" />
+        <MessageCircle size={20} color="white" />
       </button>
 
       {/* Chat Window */}
       {isOpen && (
-        <div style={{
+        <div className="chatbot-window" style={{
           position: 'fixed',
           bottom: '20px',
           right: '20px',
-          width: '350px',
-          height: '500px',
+          width: window.innerWidth <= 768 ? '100vw' : '350px',
+          height: window.innerWidth <= 768 ? '100vh' : '500px',
+          top: window.innerWidth <= 768 ? '0' : 'auto',
+          left: window.innerWidth <= 768 ? '0' : 'auto',
           backgroundColor: 'var(--bg-primary)',
           border: '1px solid var(--border-color)',
-          borderRadius: '16px',
+          borderRadius: window.innerWidth <= 768 ? '0' : '16px',
           boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-          zIndex: 1001,
+          zIndex: 9999,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden'

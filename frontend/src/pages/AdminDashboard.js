@@ -55,68 +55,144 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     loadDashboardData();
-    // Load inventory
-    const savedInventory = JSON.parse(localStorage.getItem('inventory') || '[]');
-    setInventory(savedInventory);
+    // Load inventory from API or localStorage
+    loadInventory();
   }, []);
 
-  const loadDashboardData = async () => {
-    // Load all orders from localStorage
-    const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-    const allReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
-    const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-    const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
-    const savedExpenses = JSON.parse(localStorage.getItem('productExpenses') || '{}');
-    
-    // Sample products from ProductsPage
-    const sampleProducts = [
-      { id: 1, name: 'Boho Chic Granny Square Crochet Top', category: 'crochet', price: 1299 },
-      { id: 2, name: 'Classic Striped V-Neck Crochet Vest', category: 'crochet', price: 1199 },
-      { id: 3, name: 'Minimalist Pink Crochet Tank Top', category: 'crochet', price: 999 },
-      { id: 4, name: 'Serene Blue & Pink Pooja Mat', category: 'crochet', price: 449 },
-      { id: 5, name: 'Festive Multicolor Pooja Mat', category: 'crochet', price: 499 },
-      { id: 6, name: 'Homestyle Poha Chivda', category: 'food', price: 25, pricePerKg: 480 },
-      { id: 7, name: 'Sweet & Flaky Shakarpara', category: 'food', price: 25, pricePerKg: 480 },
-      { id: 8, name: 'Crispy & Savory Namak Pare', category: 'food', price: 25, pricePerKg: 480 },
-      { id: 9, name: 'Spicy Mixture Namkeen', category: 'food', price: 25, pricePerKg: 500 },
-      { id: 10, name: 'Classic Salty Mathri', category: 'food', price: 25, pricePerKg: 480 },
-      { id: 11, name: 'Baked Jeera Biscuits', category: 'food', price: 25, pricePerKg: 480 },
-      { id: 12, name: 'Homemade Gujiya', category: 'food', price: 150, weightOptions: ['6 pieces', '12 pieces', '24 pieces'] }
-    ];
-    
-    // Filter out deleted existing products and combine with admin products
-    const availableSampleProducts = sampleProducts.filter(product => !deletedProducts.includes(product.id));
-    const allProducts = [...availableSampleProducts, ...adminProducts];
-    
-    // Get unique customers
-    const customers = [...new Map(allOrders.map(order => 
-      [order.customerName, { 
-        name: order.customerName, 
-        phone: order.phone, 
-        email: order.email || order.customerEmail || 'N/A',
-        orders: allOrders.filter(o => o.customerName === order.customerName).length 
-      }]
-    )).values()];
-    
-    // Load contacts from API or localStorage fallback
+  const loadInventory = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/contact/all`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/inventory`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       const data = await response.json();
-      const contacts = data.success ? data.contacts : [];
-      
-      setDashboardData({ orders: allOrders, products: allProducts, reviews: allReviews, customers, contacts });
+      if (data.success) {
+        setInventory(data.inventory);
+        return;
+      }
     } catch (error) {
-      console.error('Error loading contacts:', error);
-      // Fallback to localStorage
-      const localContacts = JSON.parse(localStorage.getItem('contactMessages') || '[]');
-      setDashboardData({ orders: allOrders, products: allProducts, reviews: allReviews, customers, contacts: localContacts });
+      console.error('Failed to load inventory from API:', error);
     }
     
-    setExpenses(savedExpenses);
+    // Fallback to localStorage
+    const savedInventory = JSON.parse(localStorage.getItem('inventory') || '[]');
+    setInventory(savedInventory);
+  };
+
+  const loadDashboardData = async () => {
+    try {
+      // Load orders from API ONLY - no localStorage mixing
+      const ordersResponse = await fetch(`${process.env.REACT_APP_API_URL}/orders/all`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const ordersData = await ordersResponse.json();
+      const allOrders = ordersData.success ? ordersData.orders : [];
+      
+      console.log('📊 Admin Dashboard - Orders from database:', allOrders.length);
+      
+      const allReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
+      const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
+      const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
+      const savedExpenses = JSON.parse(localStorage.getItem('productExpenses') || '{}');
+      
+      // Sample products from ProductsPage
+      const sampleProducts = [
+        { id: 1, name: 'Boho Chic Granny Square Crochet Top', category: 'crochet', price: 1299 },
+        { id: 2, name: 'Classic Striped V-Neck Crochet Vest', category: 'crochet', price: 1199 },
+        { id: 3, name: 'Minimalist Pink Crochet Tank Top', category: 'crochet', price: 999 },
+        { id: 4, name: 'Serene Blue & Pink Pooja Mat', category: 'crochet', price: 449 },
+        { id: 5, name: 'Festive Multicolor Pooja Mat', category: 'crochet', price: 499 },
+        { id: 6, name: 'Homestyle Poha Chivda', category: 'food', price: 25, pricePerKg: 480 },
+        { id: 7, name: 'Sweet & Flaky Shakarpara', category: 'food', price: 25, pricePerKg: 480 },
+        { id: 8, name: 'Crispy & Savory Namak Pare', category: 'food', price: 25, pricePerKg: 480 },
+        { id: 9, name: 'Spicy Mixture Namkeen', category: 'food', price: 25, pricePerKg: 500 },
+        { id: 10, name: 'Classic Salty Mathri', category: 'food', price: 25, pricePerKg: 480 },
+        { id: 11, name: 'Baked Jeera Biscuits', category: 'food', price: 25, pricePerKg: 480 },
+        { id: 12, name: 'Homemade Gujiya', category: 'food', price: 150, weightOptions: ['6 pieces', '12 pieces', '24 pieces'] }
+      ];
+      
+      // Filter out deleted existing products and combine with admin products
+      const availableSampleProducts = sampleProducts.filter(product => !deletedProducts.includes(product.id));
+      const allProducts = [...availableSampleProducts, ...adminProducts];
+      
+      // Get unique customers from database orders only
+      const customers = [...new Map(allOrders.map(order => {
+        const customerName = order.customerInfo?.name || order.customerName || 'Unknown';
+        const customerPhone = order.customerInfo?.phone || order.phone || order.customerPhone || 'N/A';
+        const customerEmail = order.customerInfo?.email || order.email || order.customerEmail || 'N/A';
+        
+        return [customerName, { 
+          name: customerName, 
+          phone: customerPhone, 
+          email: customerEmail,
+          orders: allOrders.filter(o => 
+            (o.customerInfo?.name || o.customerName) === customerName
+          ).length 
+        }];
+      })).values()];
+      
+      // Load contacts from API or localStorage fallback
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/contact/all`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const data = await response.json();
+        const contacts = data.success ? data.contacts : [];
+        
+        setDashboardData({ orders: allOrders, products: allProducts, reviews: allReviews, customers, contacts });
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+        // Fallback to localStorage
+        const localContacts = JSON.parse(localStorage.getItem('contactMessages') || '[]');
+        setDashboardData({ orders: allOrders, products: allProducts, reviews: allReviews, customers, contacts: localContacts });
+      }
+      
+      setExpenses(savedExpenses);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      // Complete fallback to localStorage
+      const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      const allReviews = JSON.parse(localStorage.getItem('productReviews') || '[]');
+      const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
+      const deletedProducts = JSON.parse(localStorage.getItem('deletedProducts') || '[]');
+      const savedExpenses = JSON.parse(localStorage.getItem('productExpenses') || '{}');
+      
+      const sampleProducts = [
+        { id: 1, name: 'Boho Chic Granny Square Crochet Top', category: 'crochet', price: 1299 },
+        { id: 2, name: 'Classic Striped V-Neck Crochet Vest', category: 'crochet', price: 1199 },
+        { id: 3, name: 'Minimalist Pink Crochet Tank Top', category: 'crochet', price: 999 },
+        { id: 4, name: 'Serene Blue & Pink Pooja Mat', category: 'crochet', price: 449 },
+        { id: 5, name: 'Festive Multicolor Pooja Mat', category: 'crochet', price: 499 },
+        { id: 6, name: 'Homestyle Poha Chivda', category: 'food', price: 25, pricePerKg: 480 },
+        { id: 7, name: 'Sweet & Flaky Shakarpara', category: 'food', price: 25, pricePerKg: 480 },
+        { id: 8, name: 'Crispy & Savory Namak Pare', category: 'food', price: 25, pricePerKg: 480 },
+        { id: 9, name: 'Spicy Mixture Namkeen', category: 'food', price: 25, pricePerKg: 500 },
+        { id: 10, name: 'Classic Salty Mathri', category: 'food', price: 25, pricePerKg: 480 },
+        { id: 11, name: 'Baked Jeera Biscuits', category: 'food', price: 25, pricePerKg: 480 },
+        { id: 12, name: 'Homemade Gujiya', category: 'food', price: 150, weightOptions: ['6 pieces', '12 pieces', '24 pieces'] }
+      ];
+      
+      const availableSampleProducts = sampleProducts.filter(product => !deletedProducts.includes(product.id));
+      const allProducts = [...availableSampleProducts, ...adminProducts];
+      
+      const customers = [...new Map(allOrders.map(order => 
+        [order.customerName, { 
+          name: order.customerName, 
+          phone: order.phone, 
+          email: order.email || order.customerEmail || 'N/A',
+          orders: allOrders.filter(o => o.customerName === order.customerName).length 
+        }]
+      )).values()];
+      
+      const localContacts = JSON.parse(localStorage.getItem('contactMessages') || '[]');
+      setDashboardData({ orders: allOrders, products: allProducts, reviews: allReviews, customers, contacts: localContacts });
+      setExpenses(savedExpenses);
+    }
   };
 
 
@@ -131,14 +207,36 @@ const AdminDashboard = () => {
     { id: 'contacts', label: 'Messages', icon: <Mail className="w-4 h-4" /> }
   ];
 
-  const updateOrderStatus = (orderNumber, newStatus) => {
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      // Try to update via API first
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        showToast(`Order updated to ${newStatus}`, 'success');
+        loadDashboardData();
+        return;
+      }
+    } catch (error) {
+      console.error('API update failed:', error);
+    }
+    
+    // Fallback to localStorage update
     const allOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
     const updatedOrders = allOrders.map(order => 
-      order.orderNumber === orderNumber ? { ...order, status: newStatus } : order
+      (order.orderNumber === orderId || order._id === orderId) ? { ...order, status: newStatus } : order
     );
     localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
     loadDashboardData();
-    showToast(`Order ${orderNumber} updated to ${newStatus}`, 'success');
+    showToast(`Order updated to ${newStatus}`, 'success');
   };
 
   const deleteOrder = (orderNumber) => {
@@ -150,104 +248,53 @@ const AdminDashboard = () => {
     setDeleteConfirm({ show: false, type: '', id: '', name: '' });
   };
 
-  const addProduct = () => {
+  const addProduct = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.shortDescription) {
       showToast('Please fill all required fields (Name, Price, Short Description)', 'error');
       return;
     }
     
-    const allProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
-    
-    // Calculate base price for minimum quantity
-    let basePrice = parseFloat(newProduct.price);
-    let pricePerKg = null;
-    let weightOptions = null;
-    
-    if (newProduct.category === 'food') {
-      const weights = newProduct.weightOptions ? newProduct.weightOptions.split(',').map(w => w.trim()) : ['100g Packet', '250g', '500g', '1kg'];
-      weightOptions = weights;
-      
-      // Check if it's Gujiya (piece-based pricing)
-      if (newProduct.name.toLowerCase().includes('gujiya')) {
-        // For Gujiya, price is for 6 pieces (minimum quantity)
-        basePrice = parseFloat(newProduct.price); // This should be for 6 pieces
-        weightOptions = ['6 pieces', '12 pieces', '24 pieces'];
-      } else {
-        // For other food items, calculate pricePerKg based on minimum weight
-        const minWeight = weights[0];
-        let minWeightInKg;
-        
-        if (minWeight.includes('kg')) {
-          minWeightInKg = parseFloat(minWeight.replace(/[^0-9.]/g, ''));
-        } else {
-          minWeightInKg = parseFloat(minWeight.replace(/[^0-9.]/g, '')) / 1000;
-        }
-        
-        pricePerKg = basePrice / minWeightInKg;
-        basePrice = Math.round(pricePerKg * 0.1); // 100g base price
-      }
-    }
-    
-    const product = {
-      _id: Date.now().toString(),
-      id: Date.now(),
-      ...newProduct,
-      price: basePrice,
-      pricePerKg: pricePerKg,
-      deliveryTime: parseInt(newProduct.deliveryTime) || (newProduct.category === 'crochet' ? 14 : 2),
-      ingredients: newProduct.ingredients ? newProduct.ingredients.split(',').map(i => i.trim()) : undefined,
-      allergens: newProduct.allergens ? newProduct.allergens.split(',').map(a => a.trim()) : undefined,
-      weightOptions: weightOptions,
-      images: [newProduct.image || `/images/products/${newProduct.category}-${newProduct.name.toLowerCase().replace(/\s+/g, '-')}-1.jpg`],
-      rating: 0,
-      reviewCount: 0,
-      createdAt: new Date().toISOString(),
-      customization: newProduct.category === 'crochet' ? [
-        {
-          type: 'thread-type',
-          label: 'Thread Type',
-          options: ['Cotton Thread', 'Wool Thread'],
-          priceModifier: { 'Wool Thread': 200 }
+    try {
+      // Try to save to backend first
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/admin-products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        {
-          type: 'color',
-          label: 'Colors',
-          options: ['As Pictured'],
-          priceModifier: 0
-        },
-        {
-          type: 'size',
-          label: 'Size',
-          options: ['Small (S)', 'Medium (M)', 'Large (L)', 'Custom Sizing (+₹200)'],
-          priceModifier: { 'Custom Sizing (+₹200)': 200 }
-        }
-      ] : undefined
-    };
-    
-    // Calculate raw material usage
-    if (newProduct.category === 'food' && newProduct.ingredients) {
-      const currentInventory = JSON.parse(localStorage.getItem('inventory') || '[]');
-      const updatedInventory = currentInventory.map(item => {
-        const ingredientMatch = product.ingredients?.find(ing => 
-          ing.toLowerCase().includes(item.name.toLowerCase()) || 
-          item.name.toLowerCase().includes(ing.toLowerCase())
-        );
-        if (ingredientMatch) {
-          return { ...item, quantity: Math.max(0, item.quantity - 0.1) }; // Reduce by 100g per product
-        }
-        return item;
+        body: JSON.stringify(newProduct)
       });
-      localStorage.setItem('inventory', JSON.stringify(updatedInventory));
-      setInventory(updatedInventory);
+      
+      const data = await response.json();
+      if (data.success) {
+        showToast('Product added successfully!', 'success');
+      } else {
+        throw new Error(data.error || 'Failed to add product');
+      }
+    } catch (error) {
+      console.error('API failed, using localStorage:', error);
+      // Fallback to localStorage
+      const allProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
+      
+      const product = {
+        _id: Date.now().toString(),
+        id: Date.now(),
+        ...newProduct,
+        price: parseFloat(newProduct.price),
+        deliveryTime: parseInt(newProduct.deliveryTime) || (newProduct.category === 'crochet' ? 14 : 2),
+        ingredients: newProduct.ingredients ? newProduct.ingredients.split(',').map(i => i.trim()) : [],
+        allergens: newProduct.allergens ? newProduct.allergens.split(',').map(a => a.trim()) : [],
+        weightOptions: newProduct.weightOptions ? newProduct.weightOptions.split(',').map(w => w.trim()) : [],
+        images: [newProduct.image || `/images/products/${newProduct.category}-${newProduct.name.toLowerCase().replace(/\s+/g, '-')}-1.jpg`],
+        rating: 0,
+        reviewCount: 0,
+        createdAt: new Date().toISOString()
+      };
+      
+      allProducts.push(product);
+      localStorage.setItem('adminProducts', JSON.stringify(allProducts));
+      showToast('Product added locally!', 'success');
     }
-    
-    allProducts.push(product);
-    localStorage.setItem('adminProducts', JSON.stringify(allProducts));
-    
-    // Also add to main products list for user dashboard
-    const mainProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    mainProducts.push(product);
-    localStorage.setItem('products', JSON.stringify(mainProducts));
     
     setNewProduct({ 
       name: '', price: '', category: 'food', description: '', image: '', 
@@ -257,31 +304,57 @@ const AdminDashboard = () => {
     });
     setShowAddProduct(false);
     loadDashboardData();
-    showToast('Product added successfully and is now available to customers!', 'success');
   };
 
-  const addInventoryItem = () => {
+  const addInventoryItem = async () => {
     if (!newInventoryItem.name || !newInventoryItem.quantity) {
       showToast('Please fill all required fields', 'error');
       return;
     }
     
-    const newItem = {
-      id: Date.now(),
-      ...newInventoryItem,
-      quantity: parseFloat(newInventoryItem.quantity),
-      minStock: parseFloat(newInventoryItem.minStock) || 0,
-      cost: parseFloat(newInventoryItem.cost) || 0,
-      createdAt: new Date().toISOString()
-    };
-    
-    const updatedInventory = [...inventory, newItem];
-    setInventory(updatedInventory);
-    localStorage.setItem('inventory', JSON.stringify(updatedInventory));
+    try {
+      // Try to save to backend first
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/inventory`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          ...newInventoryItem,
+          quantity: parseFloat(newInventoryItem.quantity),
+          minStock: parseFloat(newInventoryItem.minStock) || 0,
+          cost: parseFloat(newInventoryItem.cost) || 0
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        showToast('Inventory item added successfully!', 'success');
+        loadDashboardData();
+      } else {
+        throw new Error(data.error || 'Failed to add inventory item');
+      }
+    } catch (error) {
+      console.error('API failed, using localStorage:', error);
+      // Fallback to localStorage
+      const newItem = {
+        id: Date.now(),
+        ...newInventoryItem,
+        quantity: parseFloat(newInventoryItem.quantity),
+        minStock: parseFloat(newInventoryItem.minStock) || 0,
+        cost: parseFloat(newInventoryItem.cost) || 0,
+        createdAt: new Date().toISOString()
+      };
+      
+      const updatedInventory = [...inventory, newItem];
+      setInventory(updatedInventory);
+      localStorage.setItem('inventory', JSON.stringify(updatedInventory));
+      showToast('Inventory item added locally!', 'success');
+    }
     
     setNewInventoryItem({ name: '', quantity: '', unit: '', minStock: '', cost: '' });
     setShowAddInventory(false);
-    showToast('Inventory item added successfully', 'success');
   };
 
   const updateInventoryQuantity = (itemId, change) => {
@@ -814,12 +887,12 @@ const AdminDashboard = () => {
                       {filteredOrders.map((order) => (
                         <tr key={order._id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                           <td style={{ padding: '1rem', fontWeight: '600' }}>{order.orderNumber}</td>
-                          <td style={{ padding: '1rem' }}>{order.customerName}</td>
+                          <td style={{ padding: '1rem' }}>{order.customerInfo?.name || order.customerName}</td>
                           <td style={{ padding: '1rem', fontWeight: '600' }}>₹{order.total}</td>
                           <td style={{ padding: '1rem' }}>
                             <select 
                               value={order.status}
-                              onChange={(e) => updateOrderStatus(order.orderNumber, e.target.value)}
+                              onChange={(e) => updateOrderStatus(order._id || order.orderNumber, e.target.value)}
                               style={{
                                 padding: '0.25rem 0.5rem',
                                 borderRadius: '6px',
