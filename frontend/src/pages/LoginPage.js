@@ -10,6 +10,14 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Clear form data on component mount to prevent stale data
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+    setError('');
+    setShowPassword(false);
+  }, []);
   const { login, user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -38,9 +46,19 @@ const LoginPage = () => {
     setError('');
 
     try {
+      // Clear any existing auth data before login attempt
+      localStorage.removeItem('token');
+      localStorage.removeItem('stitch_savour_user');
+      
       const result = await login(email, password);
       if (result.success) {
         showToast('Login successful!', 'success');
+        
+        // Clear form data
+        setEmail('');
+        setPassword('');
+        setError('');
+        
         // Check if there's a redirect URL
         const redirectUrl = localStorage.getItem('redirectAfterLogin');
         if (redirectUrl) {
@@ -48,6 +66,7 @@ const LoginPage = () => {
           navigate(redirectUrl);
           return;
         }
+        
         // Get user data to check role
         const userData = JSON.parse(localStorage.getItem('stitch_savour_user'));
         if (userData?.role === 'admin') {
@@ -56,10 +75,14 @@ const LoginPage = () => {
           navigate('/dashboard');
         }
       } else {
+        // Clear password on failed login
+        setPassword('');
         setError(result.error || 'Invalid email or password. Please check your credentials and try again.');
         showToast(result.error || 'Invalid email or password', 'error');
       }
     } catch (error) {
+      // Clear password on error
+      setPassword('');
       setError('Login failed. Please try again.');
       showToast('Login failed. Please try again.', 'error');
     } finally {

@@ -16,6 +16,21 @@ const SignupPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Clear form data on component mount to prevent stale data
+  useEffect(() => {
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      password: '',
+      confirmPassword: ''
+    });
+    setError('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  }, []);
   const { signup, user } = useAuth();
   const navigate = useNavigate();
 
@@ -54,13 +69,38 @@ const SignupPage = () => {
     setLoading(true);
 
     try {
-      const success = await signup(formData);
-      if (success) {
+      // Clear any existing auth data before signup attempt
+      localStorage.removeItem('token');
+      localStorage.removeItem('stitch_savour_user');
+      
+      const result = await signup(formData);
+      if (result.success) {
+        // Clear form data on success
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          address: '',
+          password: '',
+          confirmPassword: ''
+        });
         navigate('/dashboard');
       } else {
-        setError('Failed to create account. Email may already be registered.');
+        // Clear passwords on failure
+        setFormData(prev => ({
+          ...prev,
+          password: '',
+          confirmPassword: ''
+        }));
+        setError(result.error || 'Failed to create account. Email may already be registered.');
       }
     } catch (error) {
+      // Clear passwords on error
+      setFormData(prev => ({
+        ...prev,
+        password: '',
+        confirmPassword: ''
+      }));
       setError('Signup failed. Please try again.');
     } finally {
       setLoading(false);

@@ -43,6 +43,8 @@ export const AuthProvider = ({ children }) => {
           // Token expired or invalid, clear everything
           localStorage.removeItem('token');
           localStorage.removeItem('stitch_savour_user');
+          localStorage.removeItem('stitch_savour_cart');
+          localStorage.removeItem('redirectAfterLogin');
           setUser(null);
         }
       } else if (savedUser) {
@@ -112,10 +114,21 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Clear all auth-related data
       setUser(null);
       localStorage.removeItem('stitch_savour_user');
       localStorage.removeItem('token');
       localStorage.removeItem('stitch_savour_cart');
+      localStorage.removeItem('redirectAfterLogin');
+      
+      // Clear any cached form data
+      const forms = document.querySelectorAll('form');
+      forms.forEach(form => {
+        if (form.reset) form.reset();
+      });
+      
+      // Force page reload to clear any stale state
+      window.location.href = '/login';
     }
   };
 

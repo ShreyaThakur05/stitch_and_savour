@@ -101,10 +101,14 @@ export const authService = {
   logout: async () => {
     try {
       await api.post('/auth/logout');
-      localStorage.removeItem('token');
     } catch (error) {
-      // Even if logout fails on server, remove token locally
+      console.error('Server logout failed:', error);
+    } finally {
+      // Always clear all auth data locally
       localStorage.removeItem('token');
+      localStorage.removeItem('stitch_savour_user');
+      localStorage.removeItem('stitch_savour_cart');
+      localStorage.removeItem('redirectAfterLogin');
     }
   }
 };
