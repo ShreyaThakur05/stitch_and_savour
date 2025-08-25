@@ -1462,7 +1462,7 @@ const UserDashboard = () => {
                     {orders.filter(order => order.status === 'delivered').flatMap(order => 
                       order.items?.map(item => (
                         <option key={`${order.orderNumber}-${item.name}`} value={`${item.name}|${order.orderNumber}`}>
-                          {item.name} - Order #{order.orderNumber}
+                          {item.name} - Order #{order.orderNumber} ({new Date(order.createdAt).toLocaleDateString('en-IN')})
                         </option>
                       )) || []
                     )}

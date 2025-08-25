@@ -292,7 +292,7 @@ const CheckoutPage = () => {
               fontSize: '1rem',
               lineHeight: '1.6'
             }}>
-              Thank you for your order! We've sent a confirmation message to your WhatsApp/SMS. 
+              Thank you for your order! We've sent a confirmation message to your email. 
               You'll receive updates about your order status.
             </p>
             <div className="order-success-actions" style={{ 

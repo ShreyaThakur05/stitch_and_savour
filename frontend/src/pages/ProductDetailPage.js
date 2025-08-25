@@ -1068,7 +1068,11 @@ const ProductDetailPage = () => {
                       color: 'var(--text-secondary)',
                       fontSize: '0.8rem'
                     }}>
-                      {new Date(review.createdAt).toLocaleDateString()}
+                      {review.createdAt ? new Date(review.createdAt).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      }) : 'Recently'}
                     </span>
                   </div>
                   <p style={{ 
@@ -1076,7 +1080,7 @@ const ProductDetailPage = () => {
                     lineHeight: '1.5',
                     margin: 0
                   }}>
-                    {review.comment}
+                    {review.comment || review.review || 'No review text provided'}
                   </p>
                 </div>
               ))}

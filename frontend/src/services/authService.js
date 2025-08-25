@@ -31,15 +31,26 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const errorCode = error.response?.data?.code;
+      const currentPath = window.location.pathname;
+      
+      // Don't auto-logout on admin pages unless explicitly token expired
+      if (currentPath.includes('/admin') && errorCode !== 'TOKEN_EXPIRED') {
+        console.log('Admin auth error, but not auto-redirecting:', errorCode);
+        return Promise.reject(error);
+      }
       
       // Clear all auth data
       localStorage.removeItem('token');
       localStorage.removeItem('stitch_savour_user');
       
       // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/signup')) {
+      if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
         console.log('Token expired or invalid, redirecting to login');
-        window.location.href = '/login';
+        if (currentPath.includes('/admin')) {
+          window.location.href = '/login';
+        } else {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

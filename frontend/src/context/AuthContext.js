@@ -40,7 +40,21 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.error('Token validation failed:', error);
-          // Token expired or invalid, clear everything
+          
+          // Don't clear admin data immediately, let them try to re-authenticate
+          const currentPath = window.location.pathname;
+          if (currentPath.includes('/admin')) {
+            console.log('Admin token validation failed, keeping user data temporarily');
+            // Keep user data but mark as potentially invalid
+            const savedUserData = JSON.parse(savedUser);
+            if (savedUserData.role === 'admin') {
+              setUser({ ...savedUserData, tokenInvalid: true });
+              setLoading(false);
+              return;
+            }
+          }
+          
+          // Token expired or invalid, clear everything for regular users
           localStorage.removeItem('token');
           localStorage.removeItem('stitch_savour_user');
           localStorage.removeItem('stitch_savour_cart');
