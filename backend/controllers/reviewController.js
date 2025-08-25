@@ -53,35 +53,49 @@ const addReview = async (req, res) => {
 const getProductReviews = async (req, res) => {
   try {
     const { productId } = req.params;
-    
-    // Try SimpleReview first, then fallback to Review
     let reviews = [];
     
+    // Try SimpleReview first
     try {
       const SimpleReview = mongoose.model('SimpleReview');
-      reviews = await SimpleReview.find({ 
+      const simpleReviews = await SimpleReview.find({ 
         $or: [
+          { productName: { $regex: new RegExp(productId, 'i') } },
           { productName: productId },
           { productId: productId }
         ]
       })
         .populate('user', 'name')
         .sort({ createdAt: -1 });
-      console.log('⭐ Found SimpleReviews for product:', productId, reviews.length);
+      reviews = reviews.concat(simpleReviews);
+      console.log('⭐ Found SimpleReviews for product:', productId, simpleReviews.length);
     } catch (simpleError) {
-      // Fallback to original Review model
-      reviews = await Review.find({ 
+      console.log('SimpleReview model not found, skipping');
+    }
+    
+    // Also try original Review model
+    try {
+      const originalReviews = await Review.find({ 
         $or: [
           { product: productId },
-          { productId: productId }
+          { productId: productId },
+          { productName: { $regex: new RegExp(productId, 'i') } }
         ]
       })
         .populate('user', 'name')
         .sort({ createdAt: -1 });
-      console.log('⭐ Found Reviews for product:', productId, reviews.length);
+      reviews = reviews.concat(originalReviews);
+      console.log('⭐ Found Reviews for product:', productId, originalReviews.length);
+    } catch (reviewError) {
+      console.log('Review model error:', reviewError.message);
     }
 
-    res.json({ success: true, reviews });
+    // Remove duplicates based on _id
+    const uniqueReviews = reviews.filter((review, index, self) => 
+      index === self.findIndex(r => r._id.toString() === review._id.toString())
+    );
+
+    res.json({ success: true, reviews: uniqueReviews });
   } catch (error) {
     console.error('Get reviews error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
@@ -116,25 +130,38 @@ const updateProductRating = async (productId) => {
 // Get all reviews (admin)
 const getAllReviews = async (req, res) => {
   try {
-    // Try to get SimpleReview first, fallback to Review
-    let reviews = [];
+    let allReviews = [];
     
+    // Get SimpleReviews
     try {
       const SimpleReview = mongoose.model('SimpleReview');
-      reviews = await SimpleReview.find()
+      const simpleReviews = await SimpleReview.find()
         .populate('user', 'name email')
         .sort({ createdAt: -1 });
-      console.log('⭐ Found SimpleReviews:', reviews.length);
+      allReviews = allReviews.concat(simpleReviews);
+      console.log('⭐ Found SimpleReviews:', simpleReviews.length);
     } catch (simpleError) {
-      // Fallback to original Review model
-      reviews = await Review.find()
+      console.log('SimpleReview model not found, skipping');
+    }
+    
+    // Get original Reviews
+    try {
+      const originalReviews = await Review.find()
         .populate('user', 'name email')
         .populate('product', 'name')
         .sort({ createdAt: -1 });
-      console.log('⭐ Found Reviews:', reviews.length);
+      allReviews = allReviews.concat(originalReviews);
+      console.log('⭐ Found Reviews:', originalReviews.length);
+    } catch (reviewError) {
+      console.log('Review model error:', reviewError.message);
     }
 
-    res.json({ success: true, reviews });
+    // Remove duplicates and sort by creation date
+    const uniqueReviews = allReviews.filter((review, index, self) => 
+      index === self.findIndex(r => r._id.toString() === review._id.toString())
+    ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json({ success: true, reviews: uniqueReviews });
   } catch (error) {
     console.error('Get all reviews error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch reviews' });

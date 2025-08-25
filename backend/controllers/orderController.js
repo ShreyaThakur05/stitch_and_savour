@@ -142,13 +142,21 @@ const createOrder = async (req, res) => {
 const getUserOrders = async (req, res) => {
   try {
     const userId = req.user?.id;
+    const userEmail = req.user?.email;
     let orders = [];
     
     if (userId) {
-      // Get orders for authenticated user
-      orders = await Order.find({ user: userId })
+      // Get orders for authenticated user by both userId and email
+      orders = await Order.find({ 
+        $or: [
+          { user: userId },
+          { 'customerInfo.email': userEmail }
+        ]
+      })
         .populate('items.product', 'name images')
         .sort({ createdAt: -1 });
+      
+      console.log(`📦 Found ${orders.length} orders for user ${userEmail}`);
     } else {
       // For guest users, try to find by email/phone from request
       const { email, phone } = req.query;
@@ -158,6 +166,7 @@ const getUserOrders = async (req, res) => {
         if (phone) query['customerInfo.phone'] = phone;
         
         orders = await Order.find(query).sort({ createdAt: -1 });
+        console.log(`📦 Found ${orders.length} guest orders for ${email || phone}`);
       }
     }
     
@@ -180,6 +189,8 @@ const getAllOrders = async (req, res) => {
       .populate('user', 'name email phone')
       .populate('items.product', 'name images category')
       .sort({ createdAt: -1 });
+    
+    console.log(`📦 Admin fetching ${orders.length} total orders`);
     
     res.json({
       success: true,

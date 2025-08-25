@@ -18,6 +18,6 @@ router.post('/', auth, addReview);
 // Admin routes
 router.get('/all', auth, getAllReviews);
 router.get('/', auth, getAllReviews);
-router.delete('/:id', auth, adminAuth, deleteReview);
+router.delete('/:id', adminAuth, deleteReview);
 
 module.exports = router;

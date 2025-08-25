@@ -42,15 +42,29 @@ const auth = async (req, res, next) => {
 
 const adminAuth = async (req, res, next) => {
   try {
-    await auth(req, res, () => {});
+    // First run auth middleware
+    await new Promise((resolve, reject) => {
+      auth(req, res, (error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
     
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Admin access required' });
+    // Check if user has admin role
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Admin access required',
+        code: 'ADMIN_REQUIRED'
+      });
     }
     
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Authentication failed' });
+    console.error('Admin auth error:', error);
+    res.status(401).json({ 
+      message: 'Authentication failed',
+      code: 'AUTH_FAILED'
+    });
   }
 };
 
